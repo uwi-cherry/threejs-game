@@ -57,14 +57,14 @@ class AuthService {
     }
   }
 
-  async login(username: string): Promise<AuthResponse> {
+  async login(username: string, password: string): Promise<AuthResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, password }),
       })
 
       const data = await response.json()
@@ -72,8 +72,12 @@ class AuthService {
       if (data.success && data.token) {
         this.token = data.token
         this.user = data.user
-        localStorage.setItem('auth_token', data.token)
-        localStorage.setItem('user_data', JSON.stringify(data.user))
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', data.token)
+          localStorage.setItem('user_data', JSON.stringify(data.user))
+          // Middleware用にクッキーにも保存
+          document.cookie = `auth_token=${data.token}; path=/; max-age=86400`
+        }
       }
 
       return data
@@ -115,8 +119,12 @@ class AuthService {
   logout(): void {
     this.token = null
     this.user = null
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('user_data')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user_data')
+      // クッキーも削除
+      document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    }
   }
 
   isAuthenticated(): boolean {
