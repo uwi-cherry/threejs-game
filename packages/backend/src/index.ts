@@ -1,8 +1,13 @@
 import { Elysia } from 'elysia'
+import { cors } from '@elysiajs/cors'
 
 const isDev = process.env.NODE_ENV !== 'production'
 
 const app = new Elysia()
+  .use(cors({
+    origin: true,
+    credentials: true
+  }))
   .get('/', () => ({ message: 'Game API Server', env: isDev ? 'development' : 'production' }))
   .get('/api/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
   

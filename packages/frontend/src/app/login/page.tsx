@@ -24,16 +24,20 @@ export default function LoginPage() {
     setError('')
 
     try {
+      console.log('Attempting login with:', { username: username.trim(), password: '***' })
       const result = await AuthService.login(username.trim(), password.trim())
+      console.log('Login result:', result)
+      
       if (result.success) {
-        // クッキーにもトークンを保存（Middleware用）
-        document.cookie = `auth_token=${result.token}; path=/; max-age=86400`
+        console.log('Login successful, redirecting to:', redirectPath)
         router.push(redirectPath)
       } else {
+        console.error('Login failed:', result.error)
         setError(result.error || 'ログインに失敗しました')
       }
     } catch (error) {
-      setError('ログインに失敗しました')
+      console.error('Login error:', error)
+      setError(`ログインに失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }

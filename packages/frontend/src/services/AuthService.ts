@@ -59,6 +59,7 @@ class AuthService {
 
   async login(username: string, password: string): Promise<AuthResponse> {
     try {
+      console.log('AuthService.login called with:', { username, baseUrl: this.baseUrl })
       const response = await fetch(`${this.baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
@@ -67,7 +68,9 @@ class AuthService {
         body: JSON.stringify({ username, password }),
       })
 
+      console.log('Response status:', response.status)
       const data = await response.json()
+      console.log('Response data:', data)
 
       if (data.success && data.token) {
         this.token = data.token
