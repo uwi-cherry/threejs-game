@@ -31,6 +31,24 @@ class AuthService {
     this.token = localStorage.getItem('auth_token')
   }
 
+  // 自動ログイン（既存トークンの検証 or ゲストログイン）
+  async autoLogin(): Promise<AuthResponse> {
+    // 既存トークンがある場合は検証
+    if (this.token) {
+      const isValid = await this.verifyToken()
+      if (isValid && this.user) {
+        return {
+          success: true,
+          user: this.user,
+          token: this.token
+        }
+      }
+    }
+
+    // トークンがない、または無効な場合はゲストログイン
+    return await this.loginAsGuest()
+  }
+
   async login(username: string): Promise<AuthResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/auth/login`, {

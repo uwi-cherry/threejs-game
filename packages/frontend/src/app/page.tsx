@@ -3,47 +3,62 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AssetManager from '../managers/AssetManager'
+import AuthService from '../services/AuthService'
 
 export default function TitlePage() {
   const [isLoadingComplete, setIsLoadingComplete] = useState(false)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState('ゲームを準備中...')
+  const [authMessage, setAuthMessage] = useState('')
   const router = useRouter()
 
   useEffect(() => {
-    const loadGameAssets = async () => {
+    // タイトル画面表示時はアセットプリロードのみ実行
+    const loadAssets = async () => {
       AssetManager.setProgressCallback((progress) => {
         setLoadingProgress(progress.percentage)
         if (progress.currentAsset) {
-          setLoadingMessage(`読み込み中: ${progress.currentAsset}`)
+          setLoadingMessage(`アセット読み込み中: ${progress.currentAsset}`)
         }
       })
 
-      const gameAssets = [
-        { name: 'ui_button', url: '/assets/ui/button.png', type: 'image' as const },
-        { name: 'bgm_title', url: '/assets/audio/title.mp3', type: 'audio' as const },
-        { name: 'game_config', url: '/assets/config/game.json', type: 'json' as const },
-        { name: 'character_sprites', url: '/assets/sprites/characters.png', type: 'image' as const },
-        { name: 'ui_icons', url: '/assets/ui/icons.png', type: 'image' as const }
-      ]
-
       try {
-        await AssetManager.loadAssets(gameAssets)
+        await AssetManager.preloadGameAssets()
         setLoadingMessage('読み込み完了!')
         setIsLoadingComplete(true)
       } catch (error) {
         console.error('Asset loading failed:', error)
         setLoadingMessage('読み込み完了!')
-        setIsLoadingComplete(true)
+        setIsLoadingComplete(true) // エラーでも続行
       }
     }
 
-    loadGameAssets()
+    loadAssets()
   }, [])
 
-  const handleStart = () => {
-    if (isLoadingComplete) {
-      router.push('/home')
+  const handleStart = async () => {
+    if (!isLoadingComplete || isAuthenticating) return
+
+    setIsAuthenticating(true)
+    setAuthMessage('認証中...')
+
+    try {
+      const result = await AuthService.autoLogin()
+      if (result.success) {
+        setAuthMessage('認証完了!')
+        // 少し待ってからホーム画面に遷移
+        setTimeout(() => {
+          router.push('/home')
+        }, 500)
+      } else {
+        setAuthMessage('認証に失敗しました')
+        setIsAuthenticating(false)
+      }
+    } catch (error) {
+      console.error('Authentication failed:', error)
+      setAuthMessage('認証に失敗しました')
+      setIsAuthenticating(false)
     }
   }
 
@@ -60,6 +75,7 @@ export default function TitlePage() {
         </div>
 
         <div className="space-y-6">
+          {/* アセット読み込み進捗（読み込み完了まで表示） */}
           {!isLoadingComplete && (
             <div className="space-y-4 max-w-md mx-auto">
               <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
@@ -68,21 +84,34 @@ export default function TitlePage() {
                   style={{ width: `${loadingProgress}%` }}
                 />
               </div>
-              <p className="text-white">{loadingMessage}</p>
-              <p className="text-slate-400 text-sm">{loadingProgress}%</p>
+              <p className="text-white text-sm">{loadingMessage}</p>
+              <p className="text-slate-400 text-xs">{loadingProgress}%</p>
             </div>
           )}
 
+          {/* 認証中の表示 */}
+          {isAuthenticating && (
+            <div className="space-y-4 max-w-md mx-auto">
+              <div className="flex justify-center">
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <p className="text-white text-sm">{authMessage}</p>
+            </div>
+          )}
+
+          {/* スタートボタン */}
           <button
             onClick={handleStart}
-            disabled={!isLoadingComplete}
+            disabled={!isLoadingComplete || isAuthenticating}
             className={`px-12 py-4 text-xl font-bold rounded-2xl transition-all duration-200 transform ${
-              isLoadingComplete 
+              isLoadingComplete && !isAuthenticating
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105 shadow-2xl cursor-pointer' 
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
           >
-            {isLoadingComplete ? 'タップしてスタート' : '読み込み中...'}
+            {isAuthenticating ? '認証中...' : 
+             !isLoadingComplete ? '読み込み中...' : 
+             'タップしてスタート'}
           </button>
         </div>
       </div>

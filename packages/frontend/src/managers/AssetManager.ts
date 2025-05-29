@@ -187,6 +187,33 @@ class AssetManager {
       .filter(([_, asset]) => asset.loaded)
       .map(([name, _]) => name)
   }
+
+  // ゲーム開始時にプリロードするアセット
+  async preloadGameAssets(): Promise<void> {
+    const gameAssets = [
+      // UI関連
+      { name: 'ui_button_normal', url: '/assets/ui/button_normal.png', type: 'image' as const },
+      { name: 'ui_button_pressed', url: '/assets/ui/button_pressed.png', type: 'image' as const },
+      { name: 'ui_icons', url: '/assets/ui/icons.png', type: 'image' as const },
+      { name: 'ui_frame', url: '/assets/ui/frame.png', type: 'image' as const },
+      
+      // キャラクター関連
+      { name: 'character_avatar_male', url: '/assets/characters/avatar_male.png', type: 'image' as const },
+      { name: 'character_avatar_female', url: '/assets/characters/avatar_female.png', type: 'image' as const },
+      
+      // 音声関連
+      { name: 'bgm_title', url: '/assets/audio/bgm_title.mp3', type: 'audio' as const },
+      { name: 'se_button_click', url: '/assets/audio/se_button_click.mp3', type: 'audio' as const },
+      { name: 'se_level_up', url: '/assets/audio/se_level_up.mp3', type: 'audio' as const },
+      
+      // ゲーム設定
+      { name: 'game_config', url: '/assets/config/game.json', type: 'json' as const },
+      { name: 'character_data', url: '/assets/config/characters.json', type: 'json' as const },
+      { name: 'item_data', url: '/assets/config/items.json', type: 'json' as const }
+    ]
+
+    await this.loadAssets(gameAssets)
+  }
 }
 
 export default AssetManager.getInstance()
