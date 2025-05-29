@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AuthService from '@/services/AuthService'
 
 interface PlayerStats {
   name: string
@@ -33,22 +32,7 @@ export default function HomePage() {
   })
   const router = useRouter()
 
-  useEffect(() => {
-    // 認証チェック
-    if (!AuthService.isAuthenticated()) {
-      router.push('/')
-      return
-    }
-
-    // プレイヤー情報を取得
-    const user = AuthService.getUser()
-    if (user) {
-      setPlayer(prev => ({ ...prev, name: user.username, level: user.level }))
-    }
-  }, [router])
-
   const handleLogout = () => {
-    AuthService.logout()
     router.push('/')
   }
 

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AuthService from '@/services/AuthService'
 
 export default function TitlePage() {
   const [username, setUsername] = useState('')
@@ -13,34 +12,18 @@ export default function TitlePage() {
     if (!username.trim()) return
 
     setIsLoading(true)
-    try {
-      const result = await AuthService.login(username.trim())
-      if (result.success) {
-        router.push('/loading')
-      } else {
-        alert(result.error || 'ログインに失敗しました')
-      }
-    } catch (error) {
-      alert('ログインに失敗しました')
-    } finally {
-      setIsLoading(false)
-    }
+    // シンプルな遷移（後で認証機能を追加）
+    setTimeout(() => {
+      router.push('/loading')
+    }, 1000)
   }
 
   const handleGuestLogin = async () => {
     setIsLoading(true)
-    try {
-      const result = await AuthService.loginAsGuest()
-      if (result.success) {
-        router.push('/loading')
-      } else {
-        alert(result.error || 'ゲストログインに失敗しました')
-      }
-    } catch (error) {
-      alert('ゲストログインに失敗しました')
-    } finally {
-      setIsLoading(false)
-    }
+    // シンプルな遷移（後で認証機能を追加）
+    setTimeout(() => {
+      router.push('/loading')
+    }, 800)
   }
 
   return (

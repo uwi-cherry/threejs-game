@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AssetManager from '@/managers/AssetManager'
 
 interface LoadProgress {
   loaded: number
@@ -17,40 +16,22 @@ export default function LoadingPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const startLoading = async () => {
-      AssetManager.setProgressCallback((progress) => {
-        setProgress(progress)
-        if (progress.currentAsset) {
-          setLoadingMessage(`読み込み中: ${progress.currentAsset}`)
-        }
-      })
-
-      // アセットリストを定義（実際のアセットに置き換える）
-      const gameAssets = [
-        { name: 'ui_button', url: '/assets/ui/button.png', type: 'image' as const },
-        { name: 'bgm_title', url: '/assets/audio/title.mp3', type: 'audio' as const },
-        { name: 'game_config', url: '/assets/config/game.json', type: 'json' as const },
-      ]
-
-      try {
-        setLoadingMessage('アセットを読み込み中...')
-        await AssetManager.loadAssets(gameAssets)
-        
+    // シンプルなローディング（後でアセット管理を追加）
+    let progress = 0
+    const interval = setInterval(() => {
+      progress += 10
+      setProgress({ loaded: progress, total: 100, percentage: progress })
+      
+      if (progress >= 100) {
+        clearInterval(interval)
         setLoadingMessage('初期化完了!')
         setTimeout(() => {
           router.push('/home')
         }, 500)
-      } catch (error) {
-        console.error('Asset loading failed:', error)
-        setLoadingMessage('読み込みエラーが発生しました')
-        // エラーでもホーム画面に遷移
-        setTimeout(() => {
-          router.push('/home')
-        }, 2000)
       }
-    }
+    }, 200)
 
-    startLoading()
+    return () => clearInterval(interval)
   }, [router])
 
   return (
