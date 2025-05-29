@@ -1,32 +1,60 @@
-import { Elysia } from 'elysia'
+import { Elysia, t } from 'elysia'
 import { cors } from '@elysiajs/cors'
-import { sessionPlugin } from 'elysia-session'
-import { CookieStore } from 'elysia-session/stores/cookie'
 
 const isDev = process.env.NODE_ENV !== 'production'
+
+// シンプルなセッションストア（メモリ内）
+const sessions = new Map<string, { 
+  userId: string
+  username: string
+  level: number
+  loginTime: string
+  expires: number 
+}>()
+
+// セッション管理関数
+const generateSessionId = () => crypto.randomUUID()
+
+const isSessionValid = (sessionId: string) => {
+  const session = sessions.get(sessionId)
+  if (!session) return false
+  if (Date.now() > session.expires) {
+    sessions.delete(sessionId)
+    return false
+  }
+  return true
+}
+
+const getSession = (sessionId: string) => {
+  if (!isSessionValid(sessionId)) return null
+  return sessions.get(sessionId)
+}
+
+const createSession = (userData: { userId: string; username: string; level: number }) => {
+  const sessionId = generateSessionId()
+  const expires = Date.now() + (24 * 60 * 60 * 1000) // 24時間
+  sessions.set(sessionId, {
+    ...userData,
+    loginTime: new Date().toISOString(),
+    expires
+  })
+  return sessionId
+}
+
+const deleteSession = (sessionId: string) => {
+  sessions.delete(sessionId)
+}
 
 const app = new Elysia()
   .use(cors({
     origin: 'http://localhost:3000',
     credentials: true
   }))
-  .use(sessionPlugin({
-    cookieName: 'game_session',
-    store: new CookieStore({
-      cookieOptions: { 
-        httpOnly: true,
-        secure: !isDev,
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 // 24時間
-      }
-    }),
-    expireAfter: 24 * 60 * 60 // 24時間
-  }))
   .get('/', () => ({ message: 'Game API Server', env: isDev ? 'development' : 'production' }))
   .get('/api/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
   
   // Authentication endpoints
-  .post('/auth/login', ({ body, session }) => {
+  .post('/auth/login', ({ body, cookie: { game_session } }) => {
     if (isDev) {
       // 簡易認証ロジック（開発用）
       const { username, password } = body as { username?: string; password?: string }
@@ -48,11 +76,22 @@ const app = new Elysia()
       const user = validUsers.find(u => u.username === username && u.password === password)
       
       if (user) {
-        // セッションにユーザー情報を保存
-        session.userId = user.id
-        session.username = user.username
-        session.level = user.level
-        session.loginTime = new Date().toISOString()
+        // セッションを作成
+        const sessionId = createSession({
+          userId: user.id,
+          username: user.username,
+          level: user.level
+        })
+        
+        // HttpOnlyクッキーを設定
+        game_session.set({
+          value: sessionId,
+          httpOnly: true,
+          secure: !isDev,
+          sameSite: 'strict',
+          maxAge: 24 * 60 * 60, // 24時間
+          path: '/'
+        })
         
         return {
           success: true,
@@ -74,11 +113,15 @@ const app = new Elysia()
     return { error: 'BaaS integration not implemented' }
   })
   
-  
-  .get('/auth/verify', ({ session }) => {
+  .get('/auth/verify', ({ cookie: { game_session } }) => {
     if (isDev) {
-      // セッションからユーザー情報を確認
-      if (session.userId) {
+      const sessionId = game_session.value
+      if (!sessionId) {
+        return { valid: false, error: 'No session cookie' }
+      }
+
+      const session = getSession(sessionId)
+      if (session) {
         return {
           valid: true,
           user: {
@@ -89,19 +132,21 @@ const app = new Elysia()
           }
         }
       } else {
-        return { valid: false, error: 'No active session' }
+        return { valid: false, error: 'Invalid or expired session' }
       }
     }
     return { error: 'BaaS integration not implemented' }
   })
   
-  .post('/auth/logout', ({ session }) => {
+  .post('/auth/logout', ({ cookie: { game_session } }) => {
     if (isDev) {
-      // セッションを削除
-      session.userId = undefined
-      session.username = undefined
-      session.level = undefined
-      session.loginTime = undefined
+      const sessionId = game_session.value
+      if (sessionId) {
+        deleteSession(sessionId)
+      }
+      
+      // クッキーを削除
+      game_session.remove()
       
       return { success: true, message: 'Logged out successfully' }
     }
@@ -109,12 +154,19 @@ const app = new Elysia()
   })
   
   // Game data endpoints
-  .get('/player/profile', ({ headers }) => {
+  .get('/player/profile', ({ cookie: { game_session } }) => {
     if (isDev) {
+      const sessionId = game_session.value
+      const session = getSession(sessionId)
+      
+      if (!session) {
+        return { error: 'Not authenticated' }
+      }
+      
       return {
-        id: 'mock_user_123',
-        username: 'TestPlayer',
-        level: 25,
+        id: session.userId,
+        username: session.username,
+        level: session.level,
         exp: 2840,
         maxExp: 3500,
         hp: 1250,
@@ -123,7 +175,7 @@ const app = new Elysia()
         maxMp: 520,
         coins: 15420,
         gems: 127,
-        lastLogin: new Date().toISOString()
+        lastLogin: session.loginTime
       }
     }
     return { error: 'BaaS integration not implemented' }

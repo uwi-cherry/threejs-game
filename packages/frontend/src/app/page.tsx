@@ -11,6 +11,11 @@ export default function TitlePage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState('ゲームを準備中...')
   const [authMessage, setAuthMessage] = useState('')
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loginError, setLoginError] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -41,27 +46,53 @@ export default function TitlePage() {
     if (!isLoadingComplete || isAuthenticating) return
 
     setIsAuthenticating(true)
-    setAuthMessage('認証中...')
+    setAuthMessage('認証確認中...')
 
     try {
+      // セッション確認
       const result = await AuthService.verifyExistingToken()
       if (result.success) {
-        setAuthMessage('認証完了!')
+        setAuthMessage('認証済み! ホーム画面へ...')
         setTimeout(() => {
           router.push('/home')
-        }, 500)
+        }, 800)
       } else {
-        setAuthMessage('ログインが必要です')
+        // セッションがない場合はログインモーダルを表示
         setIsAuthenticating(false)
-        // ログイン画面に遷移
-        setTimeout(() => {
-          router.push('/login')
-        }, 1000)
+        setShowLoginModal(true)
       }
     } catch (error) {
       console.error('Authentication failed:', error)
-      setAuthMessage('認証に失敗しました')
       setIsAuthenticating(false)
+      setShowLoginModal(true)
+    }
+  }
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!username.trim() || !password.trim()) {
+      setLoginError('ユーザー名とパスワードを入力してください')
+      return
+    }
+
+    setIsLoggingIn(true)
+    setLoginError('')
+
+    try {
+      const result = await AuthService.login(username.trim(), password.trim())
+      if (result.success) {
+        setShowLoginModal(false)
+        setAuthMessage('ログイン成功! ホーム画面へ...')
+        setTimeout(() => {
+          router.push('/home')
+        }, 800)
+      } else {
+        setLoginError(result.error || 'ログインに失敗しました')
+      }
+    } catch (error) {
+      setLoginError(`ログインに失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoggingIn(false)
     }
   }
 
@@ -118,6 +149,79 @@ export default function TitlePage() {
           </button>
         </div>
       </div>
+      
+      {/* ログインモーダル */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 w-full max-w-md border border-white/20">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">ログイン</h2>
+              <p className="text-purple-200 text-sm">ゲームを始めるにはログインが必要です</p>
+            </div>
+            
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="ユーザー名"
+                  className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-purple-300/70 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  disabled={isLoggingIn}
+                  required
+                />
+              </div>
+              
+              <div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="パスワード"
+                  className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-purple-300/70 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  disabled={isLoggingIn}
+                  required
+                />
+              </div>
+              
+              {loginError && (
+                <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+                  <p className="text-red-200 text-sm">{loginError}</p>
+                </div>
+              )}
+              
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLoginModal(false)
+                    setLoginError('')
+                    setUsername('')
+                    setPassword('')
+                  }}
+                  disabled={isLoggingIn}
+                  className="flex-1 py-3 px-4 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+                >
+                  {isLoggingIn ? 'ログイン中...' : 'ログイン'}
+                </button>
+              </div>
+            </form>
+            
+            <div className="mt-4 text-center">
+              <p className="text-white/60 text-xs">
+                テストアカウント: admin / admin123
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
