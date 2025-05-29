@@ -9,14 +9,12 @@ interface User {
 interface AuthResponse {
   success: boolean
   user?: User
-  token?: string
   error?: string
 }
 
 class AuthService {
   private static instance: AuthService
   private baseUrl = 'http://localhost:8000'
-  private token: string | null = null
   private user: User | null = null
 
   static getInstance(): AuthService {
@@ -27,33 +25,22 @@ class AuthService {
   }
 
   constructor() {
-    // クライアントサイドでのみローカルストレージからトークンを復元
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('auth_token')
-    }
+    // No need to restore from localStorage with session-based auth
   }
 
-  // 既存トークンの検証
-  async verifyExistingToken(): Promise<AuthResponse> {
-    if (!this.token) {
-      return {
-        success: false,
-        error: 'No token found'
-      }
-    }
-
-    const isValid = await this.verifyToken()
+  // 既存セッションの検証
+  async verifyExistingSession(): Promise<AuthResponse> {
+    const isValid = await this.verifySession()
     if (isValid && this.user) {
       return {
         success: true,
-        user: this.user,
-        token: this.token
+        user: this.user
       }
     }
 
     return {
       success: false,
-      error: 'Token verification failed'
+      error: 'Session verification failed'
     }
   }
 
@@ -65,6 +52,7 @@ class AuthService {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include session cookies
         body: JSON.stringify({ username, password }),
       })
 
@@ -72,15 +60,9 @@ class AuthService {
       const data = await response.json()
       console.log('Response data:', data)
 
-      if (data.success && data.token) {
-        this.token = data.token
+      if (data.success && data.user) {
         this.user = data.user
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auth_token', data.token)
-          localStorage.setItem('user_data', JSON.stringify(data.user))
-          // Middleware用にクッキーにも保存
-          document.cookie = `auth_token=${data.token}; path=/; max-age=86400`
-        }
+        // No need to store anything in localStorage with session-based auth
       }
 
       return data
@@ -92,15 +74,10 @@ class AuthService {
     }
   }
 
-
-  async verifyToken(): Promise<boolean> {
-    if (!this.token) return false
-
+  async verifySession(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/auth/verify`, {
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-        },
+        credentials: 'include', // Include session cookies
       })
 
       const data = await response.json()
@@ -109,60 +86,47 @@ class AuthService {
         this.user = data.user
         return true
       } else {
-        this.logout()
+        await this.logout()
         return false
       }
     } catch (error) {
-      console.error('Token verification failed:', error)
-      this.logout()
+      console.error('Session verification failed:', error)
+      await this.logout()
       return false
     }
   }
 
-  logout(): void {
-    this.token = null
-    this.user = null
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user_data')
-      // クッキーも削除
-      document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  async logout(): Promise<void> {
+    try {
+      // Call backend logout endpoint to destroy session
+      await fetch(`${this.baseUrl}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (error) {
+      console.error('Logout request failed:', error)
     }
+    
+    // Clear local user data
+    this.user = null
   }
 
   isAuthenticated(): boolean {
-    return this.token !== null
+    return this.user !== null
   }
 
   getUser(): User | null {
-    if (!this.user && this.token) {
-      // ローカルストレージから復元を試行
-      const userData = localStorage.getItem('user_data')
-      if (userData) {
-        try {
-          this.user = JSON.parse(userData)
-        } catch (error) {
-          console.error('Failed to parse user data:', error)
-        }
-      }
-    }
     return this.user
   }
 
-  getToken(): string | null {
-    return this.token
-  }
-
   async getPlayerProfile(): Promise<any> {
-    if (!this.token) {
+    if (!this.user) {
       throw new Error('Not authenticated')
     }
 
     try {
       const response = await fetch(`${this.baseUrl}/player/profile`, {
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-        },
+        credentials: 'include', // Include session cookies
       })
 
       return await response.json()

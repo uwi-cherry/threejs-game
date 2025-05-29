@@ -13,24 +13,24 @@ export function middleware(request: NextRequest) {
   const isPublicPath = publicPaths.includes(pathname)
   
   if (isProtectedPath) {
-    // トークンをcookieから取得
-    const token = request.cookies.get('auth_token')?.value
+    // セッションクッキーをチェック
+    const sessionCookie = request.cookies.get('game_session')?.value
     
-    if (!token) {
-      // トークンがない場合はログイン画面にリダイレクト
+    if (!sessionCookie) {
+      // セッションがない場合はログイン画面にリダイレクト
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
     
-    // トークンがある場合は続行（サーバーサイドでの検証は別途必要）
+    // セッションがある場合は続行（サーバーサイドでの検証は別途必要）
     return NextResponse.next()
   }
   
   // 認証済みユーザーがログイン画面にアクセスした場合
   if (pathname === '/login') {
-    const token = request.cookies.get('auth_token')?.value
-    if (token) {
+    const sessionCookie = request.cookies.get('game_session')?.value
+    if (sessionCookie) {
       // ホーム画面にリダイレクト
       return NextResponse.redirect(new URL('/home', request.url))
     }
