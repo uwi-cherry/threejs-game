@@ -27,26 +27,34 @@ class AuthService {
   }
 
   constructor() {
-    // ローカルストレージからトークンを復元
-    this.token = localStorage.getItem('auth_token')
+    // クライアントサイドでのみローカルストレージからトークンを復元
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('auth_token')
+    }
   }
 
-  // 自動ログイン（既存トークンの検証 or ゲストログイン）
-  async autoLogin(): Promise<AuthResponse> {
-    // 既存トークンがある場合は検証
-    if (this.token) {
-      const isValid = await this.verifyToken()
-      if (isValid && this.user) {
-        return {
-          success: true,
-          user: this.user,
-          token: this.token
-        }
+  // 既存トークンの検証
+  async verifyExistingToken(): Promise<AuthResponse> {
+    if (!this.token) {
+      return {
+        success: false,
+        error: 'No token found'
       }
     }
 
-    // トークンがない、または無効な場合はゲストログイン
-    return await this.loginAsGuest()
+    const isValid = await this.verifyToken()
+    if (isValid && this.user) {
+      return {
+        success: true,
+        user: this.user,
+        token: this.token
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Token verification failed'
+    }
   }
 
   async login(username: string): Promise<AuthResponse> {
@@ -77,32 +85,6 @@ class AuthService {
     }
   }
 
-  async loginAsGuest(): Promise<AuthResponse> {
-    try {
-      const response = await fetch(`${this.baseUrl}/auth/guest`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const data = await response.json()
-
-      if (data.success && data.token) {
-        this.token = data.token
-        this.user = data.user
-        localStorage.setItem('auth_token', data.token)
-        localStorage.setItem('user_data', JSON.stringify(data.user))
-      }
-
-      return data
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Guest login failed'
-      }
-    }
-  }
 
   async verifyToken(): Promise<boolean> {
     if (!this.token) return false

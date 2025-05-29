@@ -44,16 +44,19 @@ export default function TitlePage() {
     setAuthMessage('認証中...')
 
     try {
-      const result = await AuthService.autoLogin()
+      const result = await AuthService.verifyExistingToken()
       if (result.success) {
         setAuthMessage('認証完了!')
-        // 少し待ってからホーム画面に遷移
         setTimeout(() => {
           router.push('/home')
         }, 500)
       } else {
-        setAuthMessage('認証に失敗しました')
+        setAuthMessage('ログインが必要です')
         setIsAuthenticating(false)
+        // ログイン画面に遷移
+        setTimeout(() => {
+          router.push('/login')
+        }, 1000)
       }
     } catch (error) {
       console.error('Authentication failed:', error)

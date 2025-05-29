@@ -25,22 +25,6 @@ const app = new Elysia()
     return { error: 'BaaS integration not implemented' }
   })
   
-  .post('/auth/guest', () => {
-    if (isDev) {
-      return {
-        success: true,
-        user: {
-          id: `guest_${Date.now()}`,
-          username: 'Guest',
-          level: 1,
-          isGuest: true,
-          createdAt: new Date().toISOString()
-        },
-        token: 'mock_guest_token'
-      }
-    }
-    return { error: 'BaaS integration not implemented' }
-  })
   
   .get('/auth/verify', ({ headers }) => {
     if (isDev) {
