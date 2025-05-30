@@ -54,10 +54,6 @@ export const setCameraReference = (camera: THREE.PerspectiveCamera) => {
   threeCamera = camera
 }
 
-// シンプルなマウス感度
-const applySensitivity = (delta: number, sensitivity: number): number => {
-  return delta * sensitivity
-}
 
 // 視点の「遊び」を考慮した更新（3D酔い対策）
 const updateLookPosition = (cameraEid: number, playerPos: THREE.Vector3, params: CameraParams, deltaTime: number) => {
@@ -200,12 +196,10 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
   const inSafeZone = playerZ > -5
   const newMode = inSafeZone ? 0 : 1 // 0: fixed, 1: free (TPS)
   
-  // Prevent going too far forward from safe zone
-  if (inSafeZone && Transform.position.z[playerEid] > 2) {
-    Transform.position.z[playerEid] = 2
-  }
   
+  // Debug: log when mode changes
   if (Camera.mode[cameraEid] !== newMode) {
+    console.log(`Camera mode change: ${Camera.mode[cameraEid]} -> ${newMode}, playerZ: ${playerZ}, inSafeZone: ${inSafeZone}`)
     Camera.mode[cameraEid] = newMode
   }
   
@@ -226,11 +220,11 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
     Camera.distance[cameraEid] = distance
     Camera.height[cameraEid] = height
     
-    // 横スクロール風：カメラを横に配置
+    // 横スクロール風：カメラを後ろに配置
     threeCamera.position.set(
-      playerPos.x + distance, // プレイヤーの横に配置
+      playerPos.x, // プレイヤーと同じX
       playerPos.y + height,
-      playerPos.z
+      playerPos.z + distance // プレイヤーの後ろに配置
     )
     threeCamera.lookAt(playerPos.x, playerPos.y + 1, playerPos.z)
     
@@ -256,14 +250,19 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
     )
     
     if (inputEid !== null) {
-      // マウス絶対位置から回転角度を計算
-      const mouseX = InputState.mouseX[inputEid] // -1 to 1
-      const mouseY = InputState.mouseY[inputEid] // -1 to 1
+      // マウス入力処理
+      const deltaX = InputState.mouseDelta.x[inputEid]
+      const mouseY = InputState.mouseY[inputEid] // -1 to 1の絶対位置
       
-      // 絶対位置から絶対的な回転角度を計算
-      const rotationRange = Math.PI // 180度の範囲
-      Camera.rotationH[cameraEid] = mouseX * rotationRange
-      Camera.rotationV[cameraEid] = mouseY * (rotationRange * 0.5) // 縦は半分の範囲
+      // 水平回転：定速回転
+      const rotationSpeed = 0.02
+      if (Math.abs(deltaX) > 0.001) {
+        Camera.rotationH[cameraEid] -= Math.sign(deltaX) * rotationSpeed
+      }
+      
+      // 垂直回転：マウスY位置から直接計算（絶対値）
+      const verticalRange = (cameraParams.verticalLimitUp - cameraParams.verticalLimitDown) * Math.PI / 180
+      Camera.rotationV[cameraEid] = (mouseY * verticalRange * 0.5) + (cameraParams.verticalLimitDown * Math.PI / 180)
       
       // カメラリセット（Rキー）
       if (InputState.reset?.[inputEid]) {
@@ -280,33 +279,34 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
     )
   }
   
-  // カメラ位置計算（固定・自由モード共通）
-  const distance = Camera.mode[cameraEid] === 0 ? cameraParams.distance : Camera.actualDistance[cameraEid]
-  const height = cameraParams.height
-  const rotH = Camera.rotationH[cameraEid]
-  const rotV = Camera.rotationV[cameraEid]
-  
-  // Update ECS values
-  Camera.distance[cameraEid] = distance
-  Camera.height[cameraEid] = height
-  
-  // 球面座標系でのカメラ位置計算
-  const cosV = Math.cos(rotV)
-  const sinV = Math.sin(rotV)
-  const cosH = Math.cos(rotH)
-  const sinH = Math.sin(rotH)
-  
-  const cameraOffset = new THREE.Vector3(
-    sinH * cosV * distance,  // X: 左右移動
-    sinV * distance + height, // Y: 高さ + 上下回転
-    cosH * cosV * distance   // Z: 前後移動
-  )
-  
-  // 物理レイキャストによる障害物回避
-  const idealPosition = new THREE.Vector3().copy(playerPos).add(cameraOffset)
-  let actualCameraDistance = distance
-  
+  // 自由カメラモードのみで球面座標計算を実行
   if (Camera.mode[cameraEid] === 1) {
+    // カメラ位置計算（自由モードのみ）
+    const distance = Camera.actualDistance[cameraEid]
+    const height = cameraParams.height
+    const rotH = Camera.rotationH[cameraEid]
+    const rotV = Camera.rotationV[cameraEid]
+    
+    // Update ECS values
+    Camera.distance[cameraEid] = distance
+    Camera.height[cameraEid] = height
+    
+    // 球面座標系でのカメラ位置計算
+    const cosV = Math.cos(rotV)
+    const sinV = Math.sin(rotV)
+    const cosH = Math.cos(rotH)
+    const sinH = Math.sin(rotH)
+    
+    const cameraOffset = new THREE.Vector3(
+      sinH * cosV * distance,  // X: 左右移動
+      sinV * distance + height, // Y: 高さ + 上下回転
+      cosH * cosV * distance   // Z: 前後移動
+    )
+    
+    // 物理レイキャストによる障害物回避
+    const idealPosition = new THREE.Vector3().copy(playerPos).add(cameraOffset)
+    let actualCameraDistance = distance
+    
     // プレイヤーからカメラの理想位置へのレイキャスト
     const physics = PhysicsWorld.getInstance()
     const rayStart = new THREE.Vector3(playerPos.x, playerPos.y + cameraParams.lookAtOffset, playerPos.z)
@@ -319,16 +319,16 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
       const collisionDistance = hitResult.distance * 0.9 // 10%のマージン
       actualCameraDistance = Math.max(cameraParams.minDistance, collisionDistance)
     }
+    
+    // 最終カメラ位置
+    const directionToCamera = cameraOffset.clone().normalize()
+    const finalCameraOffset = directionToCamera.multiplyScalar(actualCameraDistance)
+    threeCamera.position.copy(playerPos).add(finalCameraOffset)
+    
+    // より自然な視線の高さ
+    const lookAtY = playerPos.y + cameraParams.lookAtOffset
+    threeCamera.lookAt(playerPos.x, lookAtY, playerPos.z)
   }
-  
-  // 最終カメラ位置
-  const directionToCamera = cameraOffset.clone().normalize()
-  const finalCameraOffset = directionToCamera.multiplyScalar(actualCameraDistance)
-  threeCamera.position.copy(playerPos).add(finalCameraOffset)
-  
-  // より自然な視線の高さ
-  const lookAtY = playerPos.y + cameraParams.lookAtOffset
-  threeCamera.lookAt(playerPos.x, lookAtY, playerPos.z)
   
   return world
 }
