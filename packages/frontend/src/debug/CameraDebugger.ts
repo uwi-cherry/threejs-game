@@ -95,7 +95,7 @@ export class CameraDebugger {
     this.params.moveSpeed = 0.25
     this.params.jumpHeight = 0.8
     
-    this.gui?.updateDisplay()
+    // lil-gui doesn't have updateDisplay, values are automatically updated
   }
   
   public getParams(): CameraDebugParams {
