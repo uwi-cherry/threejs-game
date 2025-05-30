@@ -1,7 +1,7 @@
-import { IWorld, defineQuery, hasComponent } from 'bitecs'
+import { IWorld, defineQuery } from 'bitecs'
 import { Transform } from '../../engine/transform/Transform'
 import { InputState } from '../../engine/input/InputState'
-import { Player, Flying } from '../player/PlayerFactory'
+import { Player } from '../player/PlayerFactory'
 import { Camera } from './CameraFactory'
 import * as THREE from 'three'
 
@@ -17,57 +17,47 @@ export const setCameraReference = (camera: THREE.PerspectiveCamera) => {
 }
 
 export const playerMovementSystem = (world: IWorld) => {
-  const deltaTime = world.time.delta / 1000
+  const deltaTime = (world as any).time.delta / 1000
   const players = playerQuery(world)
   const inputs = inputQuery(world)
+  
+  console.log(`Players: ${players.length}, Inputs: ${inputs.length}`)
   
   if (players.length > 0 && inputs.length > 0) {
     const playerEid = players[0]
     const inputEid = inputs[0]
     
-    const isFlying = hasComponent(world, Flying, playerEid)
-    const moveSpeed = isFlying ? 0.3 : 0.15
-    const jumpSpeed = 0.2
+    const moveSpeed = 0.25
+    const jumpHeight = 0.8
     
     // Manual movement (WASD)
     const movementX = InputState.movementX[inputEid]
-    const movementY = InputState.movementY[inputEid]
+    const movementZ = -InputState.movementY[inputEid]
     
-    if (Math.abs(movementX) > 0.1 || Math.abs(movementY) > 0.1) {
-      // Apply movement
-      const movement = { x: movementX, y: 0, z: movementY }
-      
-      // Normalize movement vector
-      const length = Math.sqrt(movement.x * movement.x + movement.z * movement.z)
-      if (length > 0) {
-        movement.x = (movement.x / length) * moveSpeed
-        movement.z = (movement.z / length) * moveSpeed
-      }
-      
-      Transform.position.x[playerEid] += movement.x
-      Transform.position.z[playerEid] += movement.z
+    console.log(`Movement: X=${movementX}, Z=${movementZ}`)
+    console.log(`Player position before: ${Transform.position.x[playerEid]}, ${Transform.position.y[playerEid]}, ${Transform.position.z[playerEid]}`)
+    
+    // Apply movement directly
+    if (Math.abs(movementX) > 0.01) {
+      Transform.position.x[playerEid] += movementX * moveSpeed
+    }
+    if (Math.abs(movementZ) > 0.01) {
+      Transform.position.z[playerEid] += movementZ * moveSpeed
     }
     
-    // Vertical movement
-    if (isFlying) {
-      if (InputState.jump[inputEid]) {
-        Transform.position.y[playerEid] += jumpSpeed
-      }
-      if (InputState.descend[inputEid]) {
-        Transform.position.y[playerEid] -= jumpSpeed
-      }
+    console.log(`Player position after: ${Transform.position.x[playerEid]}, ${Transform.position.y[playerEid]}, ${Transform.position.z[playerEid]}`)
+    
+    // Simple gravity and ground collision
+    const groundY = 2
+    if (Transform.position.y[playerEid] > groundY) {
+      Transform.position.y[playerEid] -= 0.05  // Gentler gravity
     } else {
-      // Ground mode - apply gravity
-      if (Transform.position.y[playerEid] > 2) {
-        Transform.position.y[playerEid] -= 0.1
-      } else {
-        Transform.position.y[playerEid] = 2
-      }
-      
-      // Jump
-      if (InputState.jump[inputEid] && Transform.position.y[playerEid] <= 2.1) {
-        Transform.position.y[playerEid] += jumpSpeed * 3
-      }
+      Transform.position.y[playerEid] = groundY
+    }
+    
+    // Simple jump
+    if (InputState.jump[inputEid] && Math.abs(Transform.position.y[playerEid] - groundY) < 0.1) {
+      Transform.position.y[playerEid] = groundY + jumpHeight
     }
     
     // Apply bounds
@@ -90,72 +80,59 @@ export const cameraSystem = (world: IWorld) => {
   
   const cameraEid = cameras[0]
   const playerEid = players[0]
-  const inputEid = inputs[0]
+  const inputEid = inputs.length > 0 ? inputs[0] : null
   
   // Check safe zone for camera mode switching
   const playerZ = Transform.position.z[playerEid]
-  const inSafeZone = playerZ > -10
-  const newMode = inSafeZone ? 0 : 1 // 0: fixed, 1: free
+  const inSafeZone = playerZ > -5
+  const newMode = inSafeZone ? 0 : 1 // 0: fixed, 1: free (TPS)
   
   if (Camera.mode[cameraEid] !== newMode) {
     Camera.mode[cameraEid] = newMode
+    console.log(`Camera mode changed to: ${newMode === 0 ? 'fixed' : 'TPS'} at Z=${playerZ}`)
+  }
+  
+  const playerPos = new THREE.Vector3(
+    Transform.position.x[playerEid],
+    Transform.position.y[playerEid],
+    Transform.position.z[playerEid]
+  )
+  
+  if (Camera.mode[cameraEid] === 0) {
+    // Fixed mode - simple follow camera
+    const distance = Camera.distance[cameraEid]
+    const height = Camera.height[cameraEid]
     
-    // Reset camera rotation when entering fixed mode
-    if (newMode === 0) {
-      Camera.rotationH[cameraEid] = 0
-      Camera.rotationV[cameraEid] = 0
+    threeCamera.position.set(
+      playerPos.x,
+      playerPos.y + height,
+      playerPos.z + distance
+    )
+    threeCamera.lookAt(playerPos)
+    
+  } else {
+    // TPS mode (原神風) - mouse controls camera, camera controls movement direction
+    if (inputEid) {
+      const sensitivity = 0.003
+      Camera.rotationH[cameraEid] -= InputState.mouseDelta.x[inputEid] * sensitivity
+      Camera.rotationV[cameraEid] -= InputState.mouseDelta.y[inputEid] * sensitivity
+      
+      // Clamp vertical rotation (prevent camera flip)
+      Camera.rotationV[cameraEid] = Math.max(
+        -Math.PI / 6,  // Look down limit
+        Math.min(Math.PI / 3, Camera.rotationV[cameraEid])  // Look up limit
+      )
     }
     
-    console.log(`Camera mode changed to: ${newMode === 0 ? 'fixed' : 'free'}`)
-  }
-  
-  // Handle mouse input for camera rotation (free mode only)
-  if (Camera.mode[cameraEid] === 1 && inputEid) {
-    const sensitivity = 0.005
-    Camera.rotationH[cameraEid] -= InputState.mouseDelta.x[inputEid] * sensitivity
-    Camera.rotationV[cameraEid] += InputState.mouseDelta.y[inputEid] * sensitivity
-    
-    // Clamp vertical rotation
-    Camera.rotationV[cameraEid] = Math.max(
-      -Math.PI / 3,
-      Math.min(Math.PI / 3, Camera.rotationV[cameraEid])
-    )
-  }
-  
-  // Update camera position based on mode
-  if (Camera.mode[cameraEid] === 0) {
-    // Fixed mode
-    const playerX = Transform.position.x[playerEid]
-    const playerZ = Transform.position.z[playerEid]
     const distance = Camera.distance[cameraEid]
-    const height = Camera.height[cameraEid]
-    
-    threeCamera.position.x = playerX
-    threeCamera.position.y = height
-    threeCamera.position.z = playerZ + distance
-    
-    threeCamera.lookAt(
-      playerX,
-      Transform.position.y[playerEid],
-      playerZ
-    )
-  } else {
-    // Free mode
-    const playerPos = new THREE.Vector3(
-      Transform.position.x[playerEid],
-      Transform.position.y[playerEid],
-      Transform.position.z[playerEid]
-    )
-    
-    const distance = Camera.distance[cameraEid]
-    const height = Camera.height[cameraEid]
     const rotH = Camera.rotationH[cameraEid]
     const rotV = Camera.rotationV[cameraEid]
     
+    // Calculate camera position around player (原神風)
     const cameraOffset = new THREE.Vector3(
-      Math.sin(rotH) * distance,
-      height + Math.sin(rotV) * 8,
-      Math.cos(rotH) * distance
+      Math.sin(rotH) * Math.cos(rotV) * distance,
+      Math.sin(rotV) * distance + 2, // Base height + vertical rotation
+      Math.cos(rotH) * Math.cos(rotV) * distance
     )
     
     threeCamera.position.copy(playerPos).add(cameraOffset)

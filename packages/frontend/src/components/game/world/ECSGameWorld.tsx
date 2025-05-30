@@ -8,8 +8,7 @@ import { InputSystemManager } from '../../../engine/input/InputSystem'
 import { 
   createPlayerEntity, 
   createPlayerMesh,
-  Player,
-  Flying
+  Player
 } from '../../../EcsFactory/player/PlayerFactory'
 import { 
   createEnemyEntity,
@@ -25,7 +24,6 @@ import {
   setCameraReference,
   createSystemPipeline
 } from '../../../EcsFactory/exploration/ExplorationSystems'
-import { addComponent, removeComponent, hasComponent } from 'bitecs'
 
 export interface ECSGameWorldProps {
   className?: string
@@ -50,7 +48,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     score: 0,
     enemies: 3
   })
-  const [isFlying, setIsFlying] = useState(false)
   const [cameraMode, setCameraMode] = useState<'fixed' | 'free'>('fixed')
 
   const areaParam = Array.isArray(params.area) ? params.area[0] : params.area
@@ -108,9 +105,9 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     cameraEntityRef.current = cameraEid
 
     // Create Environment
-    createEnvironment(scene, areaParam)
+    createEnvironment(scene, areaParam || 'forest')
     createEnemies(scene)
-    createBackground(scene, areaParam)
+    createBackground(scene)
 
     // Initialize Input System
     inputManagerRef.current = new InputSystemManager(renderer.domElement)
@@ -130,8 +127,8 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       animationIdRef.current = requestAnimationFrame(animate)
       
       // Update world time
-      world.time.elapsed = time
-      world.time.delta = time - (world.time.delta || time)
+      ;(world as any).time.elapsed = time
+      ;(world as any).time.delta = time - ((world as any).time.delta || time)
       
       // Run ECS systems
       systemPipeline(world)
@@ -168,15 +165,8 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
 
   // Update React state based on ECS components
   const updateReactState = () => {
-    if (playerEntityRef.current !== null && cameraEntityRef.current !== null) {
-      const playerEid = playerEntityRef.current
+    if (cameraEntityRef.current !== null) {
       const cameraEid = cameraEntityRef.current
-      
-      // Update flying state
-      const flying = hasComponent(world, Flying, playerEid)
-      if (flying !== isFlying) {
-        setIsFlying(flying)
-      }
       
       // Update camera mode
       const mode = Camera.mode[cameraEid] === 0 ? 'fixed' : 'free'
@@ -186,17 +176,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     }
   }
 
-  // Toggle flying mode
-  const toggleFlying = () => {
-    if (playerEntityRef.current !== null) {
-      const playerEid = playerEntityRef.current
-      if (hasComponent(world, Flying, playerEid)) {
-        removeComponent(world, Flying, playerEid)
-      } else {
-        addComponent(world, Flying, playerEid)
-      }
-    }
-  }
 
   // Environment Creation Functions
   const createEnvironment = (scene: THREE.Scene, area: string) => {
@@ -249,7 +228,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     }
   }
 
-  const createBackground = (scene: THREE.Scene, area: string) => {
+  const createBackground = (scene: THREE.Scene) => {
     for (let i = 0; i < 10; i++) {
       const mountainGeometry = new THREE.ConeGeometry(5, 15)
       const mountainMaterial = new THREE.MeshLambertMaterial({ color: 0x8fbc8f })
@@ -295,9 +274,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
             <div>⚡ {gameState.energy}/100</div>
             <div>🏆 {gameState.score}</div>
             <div>👹 {gameState.enemies}</div>
-            <div className={`px-2 py-1 rounded ${isFlying ? 'bg-blue-500/50 text-blue-200' : 'bg-green-500/50 text-green-200'}`}>
-              {isFlying ? '🛩️ 飛行中' : '🚶 徒歩'}
-            </div>
             <div className={`px-2 py-1 rounded ${cameraMode === 'fixed' ? 'bg-orange-500/50 text-orange-200' : 'bg-purple-500/50 text-purple-200'}`}>
               {cameraMode === 'fixed' ? '🛡️ 安置エリア' : '🎮 自由エリア'}
             </div>
@@ -312,19 +288,8 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
             <div>右クリック: 移動停止</div>
             <div>WASD: 手動移動</div>
             <div>マウス: 視点回転（自由エリア）</div>
-            <div>Space: ジャンプ/飛行切替</div>
-            <div>Shift: 降下（飛行時）</div>
+            <div>Space: ジャンプ</div>
           </div>
-          <button
-            onClick={toggleFlying}
-            className={`mt-3 px-3 py-1 rounded-lg text-xs transition-all ${
-              isFlying 
-                ? 'bg-blue-500/50 text-blue-200 hover:bg-blue-500/70' 
-                : 'bg-green-500/50 text-green-200 hover:bg-green-500/70'
-            }`}
-          >
-            {isFlying ? '🚶 徒歩モード' : '🛩️ 飛行モード'}
-          </button>
         </div>
 
         {/* Loading Screen */}
