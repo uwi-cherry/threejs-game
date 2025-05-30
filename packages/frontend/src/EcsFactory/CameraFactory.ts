@@ -1,8 +1,8 @@
 import { addEntity, addComponent, defineComponent, Types, IWorld, defineQuery } from 'bitecs'
-import { world } from '../engine/world'
-import { Transform } from '../engine/transform/Transform'
-import { InputState } from '../engine/input/InputState'
-import { cameraDebugger } from './CameraDebugger'
+import { world } from '../EcsSystem/world'
+import { Transform } from '../EcsSystem/transform/Transform'
+import { InputState } from '../EcsSystem/input/InputState'
+import { cameraDebugger } from '../debug/CameraDebugger'
 import * as THREE from 'three'
 
 // Game-specific camera component

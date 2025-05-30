@@ -1,9 +1,9 @@
 import { addEntity, addComponent, defineComponent, Types, IWorld, defineQuery } from 'bitecs'
-import { world } from '../engine/world'
-import { Transform } from '../engine/transform/Transform'
-import { InputState } from '../engine/input/InputState'
-import { RenderObject, setThreeObject } from '../engine/rendering/RenderObject'
-import { cameraDebugger } from './CameraDebugger'
+import { world } from '../EcsSystem/world'
+import { Transform } from '../EcsSystem/transform/Transform'
+import { InputState } from '../EcsSystem/input/InputState'
+import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
+import { cameraDebugger } from '../debug/CameraDebugger'
 import * as THREE from 'three'
 
 export const Player = defineComponent()

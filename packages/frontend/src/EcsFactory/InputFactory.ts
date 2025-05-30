@@ -1,7 +1,7 @@
 import { addEntity, addComponent } from 'bitecs'
-import { world } from '../engine/world'
-import { InputState } from '../engine/input/InputState'
-import { cameraDebugger } from './CameraDebugger'
+import { world } from '../EcsSystem/world'
+import { InputState } from '../EcsSystem/input/InputState'
+import { cameraDebugger } from '../debug/CameraDebugger'
 
 export const createInputEntity = () => {
   const eid = addEntity(world)

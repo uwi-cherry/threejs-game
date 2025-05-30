@@ -1,7 +1,7 @@
 import { addEntity, addComponent } from 'bitecs'
-import { world } from '../engine/world'
-import { Transform } from '../engine/transform/Transform'
-import { RenderObject, setThreeObject } from '../engine/rendering/RenderObject'
+import { world } from '../EcsSystem/world'
+import { Transform } from '../EcsSystem/transform/Transform'
+import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
 import * as THREE from 'three'
 
 // Game-specific components

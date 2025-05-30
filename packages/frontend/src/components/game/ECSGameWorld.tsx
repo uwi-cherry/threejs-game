@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import * as THREE from 'three'
-import { world } from '../../engine/world'
-import { renderSystem } from '../../engine/rendering/RenderSystem'
-import { InputSystemManager } from '../../engine/input/InputSystem'
+import { world } from '../../EcsSystem/world'
+import { renderSystem } from '../../EcsSystem/rendering/RenderSystem'
+import { InputSystemManager } from '../../EcsSystem/input/InputSystem'
 import { 
   createPlayerEntity, 
   createPlayerMesh,
@@ -18,7 +18,7 @@ import {
 } from '../../EcsFactory/CameraFactory'
 import { createSystemPipeline } from './SystemPipeline'
 import { EnvironmentCreator } from './EnvironmentCreator'
-import { cameraDebugger } from '../../EcsFactory/CameraDebugger'
+import { cameraDebugger } from '../../debug/CameraDebugger'
 
 export interface ECSGameWorldProps {
   className?: string
