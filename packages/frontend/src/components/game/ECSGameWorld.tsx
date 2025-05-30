@@ -4,21 +4,24 @@ import * as THREE from 'three'
 import { world } from '../../EcsSystem/world'
 import { renderSystem } from '../../EcsSystem/rendering/RenderSystem'
 import { InputSystemManager } from '../../EcsSystem/input/InputSystem'
+import { ResizeHandler } from '../../infrastructure/rendering/ResizeHandler'
 import { 
   createPlayerEntity, 
   createPlayerMesh,
-  playerMovementSystem
+  playerMovementSystem,
+  type PlayerParams
 } from '../../EcsFactory/PlayerFactory'
 import { GameInputHandler } from '../../EcsFactory/InputFactory'
 import { 
   createCameraEntity,
   Camera,
   cameraSystem,
-  setCameraReference
+  setCameraReference,
+  type CameraParams
 } from '../../EcsFactory/CameraFactory'
 import { createSystemPipeline } from './SystemPipeline'
 import { EnvironmentCreator } from './EnvironmentCreator'
-import { cameraDebugger } from '../../debug/CameraDebugger'
+import { cameraDebugger } from '@/debug/CameraDebugger'
 
 export interface ECSGameWorldProps {
   className?: string
@@ -31,6 +34,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
   const sceneRef = useRef<THREE.Scene | null>(null)
   const animationIdRef = useRef<number | null>(null)
   const inputManagerRef = useRef<InputSystemManager | null>(null)
+  const resizeHandlerRef = useRef<ResizeHandler | null>(null)
   
   // ECS Entity IDs
   const playerEntityRef = useRef<number | null>(null)
@@ -45,6 +49,20 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     enemies: 3
   })
   const [cameraMode, setCameraMode] = useState<'fixed' | 'free'>('fixed')
+  
+  // Debug parameters state
+  const [playerParams] = useState<PlayerParams>({
+    moveSpeed: 0.25,
+    jumpHeight: 0.8
+  })
+  
+  const [cameraParams] = useState<CameraParams>({
+    distance: 15,
+    height: 8,
+    sensitivity: 0.005,
+    verticalLimitUp: 45,
+    verticalLimitDown: -45
+  })
 
   const areaParam = Array.isArray(params.area) ? params.area[0] : params.area
 
@@ -109,15 +127,17 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     EnvironmentCreator.createEnemies(scene)
     EnvironmentCreator.createBackground(scene)
 
-    // Initialize Input System
+    // Initialize Infrastructure
     inputManagerRef.current = new InputSystemManager(renderer.domElement)
     gameInputHandlerRef.current = GameInputHandler.getInstance()
+    gameInputHandlerRef.current.setF1Handler(() => cameraDebugger.toggle())
+    resizeHandlerRef.current = new ResizeHandler(camera, renderer)
 
     // Create System Pipeline
     const systemPipeline = createSystemPipeline(
       (world) => inputManagerRef.current?.updateInput(world) || world,
-      playerMovementSystem,
-      (world) => cameraSystem(world, playerEid),
+      (world) => playerMovementSystem(world, playerParams),
+      (world) => cameraSystem(world, playerEid, cameraParams),
       renderSystem
     )
 
@@ -142,14 +162,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     }
     animate(0)
 
-    // Handle Resize
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight
-      camera.updateProjectionMatrix()
-      renderer.setSize(window.innerWidth, window.innerHeight)
-    }
-    window.addEventListener('resize', handleResize)
-
     // Cleanup
     return () => {
       if (animationIdRef.current) {
@@ -157,7 +169,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       }
       inputManagerRef.current?.destroy()
       gameInputHandlerRef.current?.destroy()
-      window.removeEventListener('resize', handleResize)
+      resizeHandlerRef.current?.destroy()
       cameraDebugger.destroy()
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement)

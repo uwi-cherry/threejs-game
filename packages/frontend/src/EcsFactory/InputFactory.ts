@@ -1,7 +1,6 @@
 import { addEntity, addComponent } from 'bitecs'
 import { world } from '../EcsSystem/world'
 import { InputState } from '../EcsSystem/input/InputState'
-import { cameraDebugger } from '../debug/CameraDebugger'
 
 export const createInputEntity = () => {
   const eid = addEntity(world)
@@ -25,6 +24,7 @@ export const createInputEntity = () => {
 // Game-specific input handling
 export class GameInputHandler {
   private static instance: GameInputHandler | null = null
+  private onF1Callback?: () => void
   
   static getInstance(): GameInputHandler {
     if (!GameInputHandler.instance) {
@@ -45,8 +45,12 @@ export class GameInputHandler {
     // Game-specific key handling
     if (event.key === 'F1') {
       event.preventDefault()
-      cameraDebugger.toggle()
+      this.onF1Callback?.()
     }
+  }
+  
+  public setF1Handler(callback: () => void) {
+    this.onF1Callback = callback
   }
   
   public destroy() {

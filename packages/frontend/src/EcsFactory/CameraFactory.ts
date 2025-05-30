@@ -2,8 +2,15 @@ import { addEntity, addComponent, defineComponent, Types, IWorld, defineQuery } 
 import { world } from '../EcsSystem/world'
 import { Transform } from '../EcsSystem/transform/Transform'
 import { InputState } from '../EcsSystem/input/InputState'
-import { cameraDebugger } from '../debug/CameraDebugger'
 import * as THREE from 'three'
+
+export interface CameraParams {
+  distance: number
+  height: number
+  sensitivity: number
+  verticalLimitUp: number
+  verticalLimitDown: number
+}
 
 // Game-specific camera component
 export const Camera = defineComponent({
@@ -45,7 +52,17 @@ export const createCameraEntity = () => {
   return eid
 }
 
-export const cameraSystem = (world: IWorld, playerEid: number) => {
+export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraParams) => {
+  // Default parameters
+  const defaultParams: CameraParams = {
+    distance: 15,
+    height: 8,
+    sensitivity: 0.005,
+    verticalLimitUp: 45,
+    verticalLimitDown: -45
+  }
+  
+  const cameraParams = params || defaultParams
   if (!threeCamera) return world
   
   const cameras = cameraQuery(world)
@@ -78,9 +95,8 @@ export const cameraSystem = (world: IWorld, playerEid: number) => {
   
   if (Camera.mode[cameraEid] === 0) {
     // Fixed mode - simple follow camera
-    const debugParams = cameraDebugger.getParams()
-    const distance = debugParams.distance
-    const height = debugParams.height
+    const distance = cameraParams.distance
+    const height = cameraParams.height
     
     // Update ECS values
     Camera.distance[cameraEid] = distance
@@ -96,9 +112,8 @@ export const cameraSystem = (world: IWorld, playerEid: number) => {
   } else {
     // TPS mode (原神風) - free camera with full rotation
     if (inputEid) {
-      // Get debug parameters for sensitivity and limits
-      const debugParams = cameraDebugger.getParams()
-      const sensitivity = debugParams.sensitivity
+      // Get camera parameters
+      const sensitivity = cameraParams.sensitivity
       
       // Mouse delta accumulation for smoother rotation
       const deltaX = InputState.mouseDelta.x[inputEid]
@@ -111,9 +126,9 @@ export const cameraSystem = (world: IWorld, playerEid: number) => {
         // Wrap horizontal rotation to prevent accumulation
         Camera.rotationH[cameraEid] = Camera.rotationH[cameraEid] % (Math.PI * 2)
         
-        // Clamp vertical rotation using debug parameters
-        const upLimit = (debugParams.verticalLimitUp * Math.PI) / 180
-        const downLimit = (debugParams.verticalLimitDown * Math.PI) / 180
+        // Clamp vertical rotation using camera parameters
+        const upLimit = (cameraParams.verticalLimitUp * Math.PI) / 180
+        const downLimit = (cameraParams.verticalLimitDown * Math.PI) / 180
         Camera.rotationV[cameraEid] = Math.max(
           downLimit,
           Math.min(upLimit, Camera.rotationV[cameraEid])
@@ -122,10 +137,9 @@ export const cameraSystem = (world: IWorld, playerEid: number) => {
       }
     }
     
-    // Use debug parameters if available, otherwise use ECS values
-    const debugParams = cameraDebugger.getParams()
-    const distance = debugParams.distance
-    const height = debugParams.height
+    // Use injected parameters
+    const distance = cameraParams.distance
+    const height = cameraParams.height
     const rotH = Camera.rotationH[cameraEid]
     const rotV = Camera.rotationV[cameraEid]
     

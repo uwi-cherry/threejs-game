@@ -3,8 +3,12 @@ import { world } from '../EcsSystem/world'
 import { Transform } from '../EcsSystem/transform/Transform'
 import { InputState } from '../EcsSystem/input/InputState'
 import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
-import { cameraDebugger } from '../debug/CameraDebugger'
 import * as THREE from 'three'
+
+export interface PlayerParams {
+  moveSpeed: number
+  jumpHeight: number
+}
 
 export const Player = defineComponent()
 export const Health = defineComponent({
@@ -53,7 +57,15 @@ export const createPlayerMesh = (eid: number, scene: THREE.Scene) => {
 const playerQuery = defineQuery([Player, Transform])
 const inputQuery = defineQuery([InputState])
 
-export const playerMovementSystem = (world: IWorld) => {
+export const playerMovementSystem = (world: IWorld, params?: PlayerParams) => {
+  // Default parameters
+  const defaultParams: PlayerParams = {
+    moveSpeed: 0.25,
+    jumpHeight: 0.8
+  }
+  
+  const playerParams = params || defaultParams
+  
   const players = playerQuery(world)
   const inputs = inputQuery(world)
   
@@ -62,10 +74,8 @@ export const playerMovementSystem = (world: IWorld) => {
   const playerEid = players[0]
   const inputEid = inputs[0]
   
-  // Get debug parameters
-  const debugParams = cameraDebugger.getParams()
-  const moveSpeed = debugParams.moveSpeed
-  const jumpHeight = debugParams.jumpHeight
+  const moveSpeed = playerParams.moveSpeed
+  const jumpHeight = playerParams.jumpHeight
   
   // Manual movement (WASD)
   const movementX = InputState.movementX[inputEid]
