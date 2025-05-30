@@ -2,11 +2,15 @@ import { addEntity, addComponent } from 'bitecs'
 import { world } from '../EcsSystem/world'
 import { InputState } from '../EcsSystem/input/InputState'
 
-export const createInputEntity = () => {
+/**
+ * 入力関連のエンティティを作成するファクトリ関数
+ * @returns 作成されたエンティティのID
+ */
+export const createInputEntity = (): number => {
   const eid = addEntity(world)
   addComponent(world, InputState, eid)
   
-  // Initialize input state
+  // 入力状態の初期化
   InputState.movementX[eid] = 0
   InputState.movementY[eid] = 0
   InputState.jump[eid] = 0
@@ -19,42 +23,4 @@ export const createInputEntity = () => {
   InputState.rightClick[eid] = 0
   
   return eid
-}
-
-// Game-specific input handling
-export class GameInputHandler {
-  private static instance: GameInputHandler | null = null
-  private onF1Callback?: () => void
-  
-  static getInstance(): GameInputHandler {
-    if (!GameInputHandler.instance) {
-      GameInputHandler.instance = new GameInputHandler()
-    }
-    return GameInputHandler.instance
-  }
-  
-  private constructor() {
-    this.setupEventListeners()
-  }
-  
-  private setupEventListeners() {
-    window.addEventListener('keydown', this.handleKeyDown.bind(this))
-  }
-  
-  private handleKeyDown(event: KeyboardEvent) {
-    // Game-specific key handling
-    if (event.key === 'F1') {
-      event.preventDefault()
-      this.onF1Callback?.()
-    }
-  }
-  
-  public setF1Handler(callback: () => void) {
-    this.onF1Callback = callback
-  }
-  
-  public destroy() {
-    window.removeEventListener('keydown', this.handleKeyDown.bind(this))
-    GameInputHandler.instance = null
-  }
 }

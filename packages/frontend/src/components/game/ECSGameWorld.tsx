@@ -11,7 +11,7 @@ import {
   playerMovementSystem,
   type PlayerParams
 } from '../../EcsFactory/PlayerFactory'
-import { GameInputHandler } from '../../EcsFactory/InputFactory'
+
 import { createCameraEntity, createCameraSystem } from '../../EcsFactory/CameraFactory'
 import { setCameraReference } from '../../EcsSystem/camera/CameraFollowSystem'
 import { createSystemPipeline } from './SystemPipeline'
@@ -27,7 +27,7 @@ export default function ECSGameWorld() {
   // ECS Entity IDs
   const playerEntityRef = useRef<number | null>(null)
   const cameraEntityRef = useRef<number | null>(null)
-  const gameInputHandlerRef = useRef<GameInputHandler | null>(null)
+  // InputSystemManagerが入力処理を担当するため、GameInputHandlerは不要になりました
 
   const playerParams: PlayerParams = {
     moveSpeed: 0.25,
@@ -124,7 +124,14 @@ export default function ECSGameWorld() {
 
     // Initialize input and resize handlers
     inputManagerRef.current = new InputSystemManager(renderer.domElement)
-    gameInputHandlerRef.current = GameInputHandler.getInstance()
+    // F1キーのハンドラーを設定
+    if (inputManagerRef.current) {
+      inputManagerRef.current.setF1Handler(() => {
+        console.log('F1 pressed - toggle debug info')
+        // デバッグ情報の表示/非表示を切り替えるなどの処理をここに追加
+      })
+    }
+
     resizeHandlerRef.current = new ResizeHandler(camera, renderer)
 
 
@@ -164,7 +171,11 @@ export default function ECSGameWorld() {
         cancelAnimationFrame(animationIdRef.current)
       }
       
-      // Cleanup
+      // F1キーハンドラーのクリーンアップ
+      if (inputManagerRef.current) {
+        inputManagerRef.current.setF1Handler(() => {})
+      }
+      
       if (resizeHandlerRef.current) {
         // ResizeHandler doesn't have a dispose method
         resizeHandlerRef.current = null

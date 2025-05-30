@@ -14,6 +14,7 @@ export class InputSystemManager {
   private rightClick = false
   private mouseWheel = 0
   private resetPressed = false
+  private onF1Callback: (() => void) = () => {}
   
   // バインドしたイベントハンドラーの参照を保持
   private boundHandleKeyDown: (event: KeyboardEvent) => void
@@ -67,6 +68,12 @@ export class InputSystemManager {
     // Rキーでカメラリセット
     if (event.code === 'KeyR') {
       this.resetPressed = true
+    }
+    
+    // F1キーの処理
+    if (event.code === 'F1' && this.onF1Callback) {
+      event.preventDefault()
+      this.onF1Callback()
     }
   }
   
@@ -163,6 +170,20 @@ export class InputSystemManager {
     }
     
     return world
+  }
+  
+  public isResetPressed(): boolean {
+    const pressed = this.resetPressed
+    this.resetPressed = false
+    return pressed
+  }
+  
+  /**
+   * F1キーが押されたときのコールバックを設定
+   * @param callback コールバック関数
+   */
+  public setF1Handler(callback: () => void): void {
+    this.onF1Callback = callback
   }
   
   public destroy() {
