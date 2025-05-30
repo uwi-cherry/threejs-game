@@ -78,33 +78,15 @@ export default function HomePage() {
         {/* メインアクション */}
         <div className="grid grid-cols-2 gap-4">
           <button className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
-            <div className="text-3xl mb-2">⚔️</div>
-            <div className="text-lg">冒険</div>
-            <div className="text-xs opacity-80">スタミナ 45/50</div>
+            <div className="text-3xl mb-2">📖</div>
+            <div className="text-lg">ストーリー</div>
+            <div className="text-xs opacity-80">第1章 進行中</div>
           </button>
           
-          <button className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
-            <div className="text-3xl mb-2">🎲</div>
-            <div className="text-lg">ガチャ</div>
-            <div className="text-xs opacity-80">無料あと1回</div>
-          </button>
-        </div>
-
-        {/* サブアクション */}
-        <div className="grid grid-cols-3 gap-3">
-          <button className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-white text-center hover:bg-white/20 transition-all">
-            <div className="text-2xl mb-1">👥</div>
-            <div className="text-xs">パーティ</div>
-          </button>
-          
-          <button className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-white text-center hover:bg-white/20 transition-all">
-            <div className="text-2xl mb-1">🏰</div>
-            <div className="text-xs">ギルド</div>
-          </button>
-          
-          <button className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-white text-center hover:bg-white/20 transition-all">
-            <div className="text-2xl mb-1">🛒</div>
-            <div className="text-xs">ショップ</div>
+          <button className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+            <div className="text-3xl mb-2">🗺️</div>
+            <div className="text-lg">探索</div>
+            <div className="text-xs opacity-80">新エリア発見</div>
           </button>
         </div>
 
@@ -158,13 +140,11 @@ export default function HomePage() {
       {/* ボトムナビゲーション */}
       <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/20">
         <div className="max-w-md mx-auto px-4 py-2">
-          <div className="grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-3 gap-1">
             {[
               { icon: '🏠', label: 'ホーム', active: true },
-              { icon: '⚔️', label: 'クエスト', active: false },
-              { icon: '👥', label: 'パーティ', active: false },
-              { icon: '🏰', label: 'ギルド', active: false },
-              { icon: '⚙️', label: 'その他', active: false }
+              { icon: '🚪', label: '個室', active: false },
+              { icon: '👤', label: 'キャラ', active: false }
             ].map((item, index) => (
               <button
                 key={index}
