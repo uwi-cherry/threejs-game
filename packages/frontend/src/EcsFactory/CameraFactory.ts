@@ -119,9 +119,12 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
       const deltaX = InputState.mouseDelta.x[inputEid]
       const deltaY = InputState.mouseDelta.y[inputEid]
       
+      console.log(`Mouse delta: X=${deltaX.toFixed(3)}, Y=${deltaY.toFixed(3)}`)
+      
       if (Math.abs(deltaX) > 0.1 || Math.abs(deltaY) > 0.1) {
         Camera.rotationH[cameraEid] -= deltaX * sensitivity
         Camera.rotationV[cameraEid] -= deltaY * sensitivity
+        console.log(`Camera rotation updated: H=${Camera.rotationH[cameraEid].toFixed(3)}, V=${Camera.rotationV[cameraEid].toFixed(3)}`)
         
         // Wrap horizontal rotation to prevent accumulation
         Camera.rotationH[cameraEid] = Camera.rotationH[cameraEid] % (Math.PI * 2)

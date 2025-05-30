@@ -67,14 +67,13 @@ export class InputSystemManager {
       -((event.clientY - rect.top) / rect.height) * 2 + 1
     )
     
-    if (this.mouseDown) {
-      this.mouseDelta.set(
-        event.movementX || 0,
-        event.movementY || 0
-      )
-    } else {
-      this.mouseDelta.set(0, 0)
-    }
+    // Always track mouse delta for camera rotation
+    this.mouseDelta.set(
+      event.movementX || 0,
+      event.movementY || 0
+    )
+    
+    console.log(`InputSystem mouseDelta: X=${this.mouseDelta.x}, Y=${this.mouseDelta.y}`)
   }
   
   private handleClick(event: MouseEvent) {
