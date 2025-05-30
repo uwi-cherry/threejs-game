@@ -3,7 +3,7 @@ import { world } from '../EcsSystem/world'
 import { Transform } from '../EcsSystem/transform/Transform'
 import { InputState } from '../EcsSystem/input/InputState'
 import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
-import { Camera } from './CameraFactory'
+import { Camera } from '../EcsSystem/camera/Camera'
 import * as THREE from 'three'
 
 export interface PlayerParams {
