@@ -148,7 +148,10 @@ export default function HomePage() {
           </button>
           
           {/* 探索 */}
-          <button className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+          <button 
+            onClick={() => router.push('/explore')}
+            className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+          >
             <div className="text-3xl mb-2">🗺️</div>
             <div className="text-lg mb-1">探索</div>
             <div className="text-sm opacity-80">新エリア発見</div>

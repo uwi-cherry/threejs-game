@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import AssetManager from '../managers/AssetManager'
+import AssetManager from '../systems/AssetManager'
 import AuthService from '../services/AuthService'
 
 export default function TitlePage() {
