@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { world } from '../../EcsSystem/world'
 import { renderSystem } from '../../EcsSystem/rendering/RenderSystem'
 import { InputSystemManager } from '../../EcsSystem/input/InputSystem'
-import { ResizeHandler } from '../../infrastructure/rendering/ResizeHandler'
+import { ResizeHandler } from '../../infrastructure/ResizeHandler'
 import { 
   createPlayerEntity, 
   createPlayerMesh,

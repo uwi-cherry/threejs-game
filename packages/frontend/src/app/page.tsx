@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import AssetManager from '../infrastructure/assets/AssetManager'
-import AuthService from '../infrastructure/auth/AuthService'
+import AssetManager from '../infrastructure/AssetManager'
+import AuthService from '../infrastructure/AuthService'
 
 export default function TitlePage() {
   const [isLoadingComplete, setIsLoadingComplete] = useState(false)
