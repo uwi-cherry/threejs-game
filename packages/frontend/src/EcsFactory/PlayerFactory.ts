@@ -1,35 +1,42 @@
-import { addEntity, addComponent, defineComponent, Types, IWorld, defineQuery } from 'bitecs'
+import { addEntity, addComponent } from 'bitecs'
 import { world } from '../EcsSystem/world'
 import { Transform } from '../EcsSystem/transform/Transform'
 import { InputState } from '../EcsSystem/input/InputState'
 import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
-import { Camera } from '../EcsSystem/camera/Camera'
+import { 
+  Player, 
+  Health, 
+  DEFAULT_PLAYER_PARAMS,
+  initializePlayerComponents
+} from '../EcsSystem/player/PlayerComponents'
+
+// コンポーネントを初期化
+const { Player: PlayerComponent, Health: HealthComponent } = initializePlayerComponents()
 import * as THREE from 'three'
 
-export interface PlayerParams {
-  moveSpeed: number
-  jumpHeight: number
-}
-
-export const Player = defineComponent()
-export const Health = defineComponent({
-  current: Types.f32,
-  max: Types.f32
-})
-
-export const createPlayerEntity = () => {
+/**
+ * プレイヤーエンティティを作成する
+ * @param position 初期位置（オプション）
+ * @param health 初期体力（オプション）
+ * @returns 作成されたエンティティID
+ */
+export const createPlayerEntity = (position?: { x: number, y: number, z: number }, health?: { current: number, max: number }) => {
   const eid = addEntity(world)
   
-  addComponent(world, Player, eid)
+  // 必須コンポーネントを追加
+  addComponent(world, PlayerComponent, eid)
   addComponent(world, Transform, eid)
-  addComponent(world, Health, eid)
+  addComponent(world, HealthComponent, eid)
   addComponent(world, InputState, eid)
   addComponent(world, RenderObject, eid)
   
-  // Initialize Transform
-  Transform.position.x[eid] = 0
-  Transform.position.y[eid] = 2
-  Transform.position.z[eid] = 0
+  // 初期位置の設定
+  const pos = position || { x: 0, y: 2, z: 0 }
+  Transform.position.x[eid] = pos.x
+  Transform.position.y[eid] = pos.y
+  Transform.position.z[eid] = pos.z
+  
+  // 初期回転・スケールの設定
   Transform.rotation.x[eid] = 0
   Transform.rotation.y[eid] = 0
   Transform.rotation.z[eid] = 0
@@ -37,98 +44,41 @@ export const createPlayerEntity = () => {
   Transform.scale.y[eid] = 1
   Transform.scale.z[eid] = 1
   
-  // Initialize Health
-  Health.current[eid] = 100
-  Health.max[eid] = 100
+  // 体力の初期化（デフォルト値はコンポーネント定義で設定済み）
+  if (health) {
+    // Healthコンポーネントのプロパティにアクセスするために型アサーションを使用
+    const healthComp = Health as any
+    healthComp.current[eid] = health.current
+    healthComp.max[eid] = health.max
+  }
   
   return eid
 }
 
-export const createPlayerMesh = (eid: number, scene: THREE.Scene) => {
-  const playerGeometry = new THREE.CapsuleGeometry(0.5, 1.5)
-  const playerMaterial = new THREE.MeshLambertMaterial({ color: 0xff69b4 })
+/**
+ * プレイヤーの3Dメッシュを作成し、シーンに追加する
+ * @param eid プレイヤーエンティティID
+ * @param scene 追加先のシーン
+ * @param color プレイヤーの色（オプション）
+ * @returns 作成されたメッシュ
+ */
+export const createPlayerMesh = (eid: number, scene: THREE.Scene, color: number = 0xff69b4): THREE.Mesh => {
+  const playerGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 8, 16)
+  const playerMaterial = new THREE.MeshLambertMaterial({ 
+    color,
+    flatShading: true
+  })
+  
   const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial)
   playerMesh.castShadow = true
+  playerMesh.receiveShadow = true
+  
   setThreeObject(eid, playerMesh)
   scene.add(playerMesh)
+  
   return playerMesh
 }
 
-// Player movement system
-const playerQuery = defineQuery([Player, Transform])
-const inputQuery = defineQuery([InputState])
-const cameraQuery = defineQuery([Camera, Transform])
-
-export const playerMovementSystem = (world: IWorld, params?: PlayerParams) => {
-  // Default parameters
-  const defaultParams: PlayerParams = {
-    moveSpeed: 0.25,
-    jumpHeight: 0.8
-  }
-  
-  const playerParams = params || defaultParams
-  
-  const players = playerQuery(world)
-  const inputs = inputQuery(world)
-  const cameras = cameraQuery(world)
-  
-  if (players.length === 0 || inputs.length === 0 || cameras.length === 0) return world
-  
-  const playerEid = players[0]
-  const inputEid = inputs[0]
-  const cameraEid = cameras[0]
-  
-  const moveSpeed = playerParams.moveSpeed
-  const jumpHeight = playerParams.jumpHeight
-  
-  // Manual movement (WASD) - カメラ方向ベース
-  const movementX = InputState.movementX[inputEid]
-  const movementZ = -InputState.movementY[inputEid]
-  
-  if (Math.abs(movementX) > 0.01 || Math.abs(movementZ) > 0.01) {
-    // カメラの水平回転を取得
-    const cameraRotationH = Camera.rotationH[cameraEid]
-    
-    // カメラ方向ベースの移動ベクトルを計算
-    const forward = new THREE.Vector3(
-      Math.sin(cameraRotationH),
-      0,
-      Math.cos(cameraRotationH)
-    )
-    const right = new THREE.Vector3(
-      Math.cos(cameraRotationH),
-      0,
-      -Math.sin(cameraRotationH)
-    )
-    
-    // 移動ベクトルを合成
-    const moveDirection = new THREE.Vector3()
-    moveDirection.add(right.multiplyScalar(movementX))
-    moveDirection.add(forward.multiplyScalar(movementZ))
-    moveDirection.normalize()
-    
-    // プレイヤー位置を更新
-    Transform.position.x[playerEid] += moveDirection.x * moveSpeed
-    Transform.position.z[playerEid] += moveDirection.z * moveSpeed
-  }
-  
-  // Simple gravity and ground collision
-  const groundY = 2
-  if (Transform.position.y[playerEid] > groundY) {
-    Transform.position.y[playerEid] -= 0.05
-  } else {
-    Transform.position.y[playerEid] = groundY
-  }
-  
-  // Jump
-  if (InputState.jump[inputEid] && Math.abs(Transform.position.y[playerEid] - groundY) < 0.1) {
-    Transform.position.y[playerEid] = groundY + jumpHeight
-  }
-  
-  // Apply bounds - prevent going too far forward (positive Z)
-  Transform.position.x[playerEid] = Math.max(-80, Math.min(80, Transform.position.x[playerEid]))
-  Transform.position.z[playerEid] = Math.max(-80, Math.min(5, Transform.position.z[playerEid]))
-  Transform.position.y[playerEid] = Math.max(0.5, Math.min(50, Transform.position.y[playerEid]))
-  
-  return world
-}
+// 後方互換性のためエクスポート
+export { DEFAULT_PLAYER_PARAMS } from '../EcsSystem/player/PlayerComponents'
+export { createPlayerMovementSystem } from '../EcsSystem/player/PlayerMovementSystem'

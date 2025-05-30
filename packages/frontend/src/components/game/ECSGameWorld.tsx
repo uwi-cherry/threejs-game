@@ -8,8 +8,8 @@ import { PhysicsWorld } from '../../EcsSystem/physics/PhysicsWorld'
 import { 
   createPlayerEntity, 
   createPlayerMesh,
-  playerMovementSystem,
-  type PlayerParams
+  createPlayerMovementSystem,
+  DEFAULT_PLAYER_PARAMS
 } from '../../EcsFactory/PlayerFactory'
 
 import { createCameraEntity, createCameraSystem } from '../../EcsFactory/CameraFactory'
@@ -29,10 +29,8 @@ export default function ECSGameWorld() {
   const cameraEntityRef = useRef<number | null>(null)
   // InputSystemManagerが入力処理を担当するため、GameInputHandlerは不要になりました
 
-  const playerParams: PlayerParams = {
-    moveSpeed: 0.25,
-    jumpHeight: 0.8
-  }
+  // プレイヤーの移動システムを作成
+  const playerMovementSystem = createPlayerMovementSystem(DEFAULT_PLAYER_PARAMS)
 
   const areaParam = 'default'
 
@@ -139,7 +137,7 @@ export default function ECSGameWorld() {
     // Create System Pipeline
     const systemPipeline = createSystemPipeline(
       (world) => inputManagerRef.current?.updateInput(world) || world,
-      (world) => playerMovementSystem(world, playerParams),
+      playerMovementSystem,
       cameraSystem,
       renderSystem
     )
