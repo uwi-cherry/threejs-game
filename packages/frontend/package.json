@@ -9,8 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "motion": "^12.15.0",
-    "narraleaf-react": "^0.5.0",
     "next": "^15.3.3",
     "react": "^19",
     "react-dom": "^19",

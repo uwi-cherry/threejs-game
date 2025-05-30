@@ -1,8 +1,8 @@
 'use client'
 
 import { useRouter, useParams } from 'next/navigation'
-import { Player } from 'narraleaf-react'
-import { sampleStory } from '@/stories/sampleStory'
+import VisualNovelPlayer from '@/components/VisualNovelPlayer'
+import { sampleStory } from '@/data/sampleStory'
 
 export default function StoryPlayPage() {
   const router = useRouter()
@@ -19,12 +19,16 @@ export default function StoryPlayPage() {
     router.push('/story')
   }
 
-  const handleGameReady = () => {
-    console.log('Game is ready to play!')
+  const handleSave = (gameState: any) => {
+    // TODO: ゲーム状態をローカルストレージに保存
+    console.log('Game state saved:', gameState)
   }
 
+  console.log('Story data:', sampleStory)
+  console.log('Chapter:', chapterParam, 'Episode:', episodeParam)
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 relative">
+    <div className="min-h-screen relative">
       {/* 戻るボタン */}
       <button
         onClick={handleBack}
@@ -33,15 +37,12 @@ export default function StoryPlayPage() {
         ← 戻る
       </button>
 
-      {/* NarraLeaf Player */}
-      <Player
+      {/* ビジュアルノベルプレイヤー */}
+      <VisualNovelPlayer
         story={sampleStory}
-        width="100%"
-        height="100vh"
-        className="w-full h-screen"
-        onReady={handleGameReady}
         onEnd={handleGameEnd}
-        active={true}
+        onSave={handleSave}
+        className="w-full h-screen"
       />
     </div>
   )
