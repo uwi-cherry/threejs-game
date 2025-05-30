@@ -93,6 +93,8 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
     Transform.position.z[playerEid]
   )
   
+  console.log(`Current camera mode: ${Camera.mode[cameraEid]} (0=FIXED, 1=FREE)`)
+  
   if (Camera.mode[cameraEid] === 0) {
     // Fixed mode - simple follow camera
     const distance = cameraParams.distance
@@ -111,7 +113,8 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
     
   } else {
     // TPS mode (原神風) - free camera with full rotation
-    if (inputEid) {
+    console.log(`Free camera mode - inputEid: ${inputEid}`)
+    if (inputEid !== null) {
       // Get camera parameters
       const sensitivity = cameraParams.sensitivity
       
@@ -119,9 +122,10 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
       const deltaX = InputState.mouseDelta.x[inputEid]
       const deltaY = InputState.mouseDelta.y[inputEid]
       
-      console.log(`Mouse delta: X=${deltaX.toFixed(3)}, Y=${deltaY.toFixed(3)}`)
+      console.log(`CameraFactory Mouse delta: X=${deltaX.toFixed(3)}, Y=${deltaY.toFixed(3)}`)
+      console.log(`Current camera rotations: H=${Camera.rotationH[cameraEid].toFixed(3)}, V=${Camera.rotationV[cameraEid].toFixed(3)}`)
       
-      if (Math.abs(deltaX) > 0.1 || Math.abs(deltaY) > 0.1) {
+      if (Math.abs(deltaX) > 0.01 || Math.abs(deltaY) > 0.01) {
         Camera.rotationH[cameraEid] -= deltaX * sensitivity
         Camera.rotationV[cameraEid] -= deltaY * sensitivity
         console.log(`Camera rotation updated: H=${Camera.rotationH[cameraEid].toFixed(3)}, V=${Camera.rotationV[cameraEid].toFixed(3)}`)
@@ -137,6 +141,8 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
           Math.min(upLimit, Camera.rotationV[cameraEid])
         )
         
+      } else {
+        console.log(`Delta too small, threshold is 0.01`)
       }
     }
     
@@ -164,6 +170,9 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
     
     threeCamera.position.copy(playerPos).add(cameraOffset)
     threeCamera.lookAt(playerPos.x, playerPos.y + 1, playerPos.z)  // Look slightly above player center
+    
+    console.log(`Camera position: (${threeCamera.position.x.toFixed(2)}, ${threeCamera.position.y.toFixed(2)}, ${threeCamera.position.z.toFixed(2)})`)
+    console.log(`Camera looking at: (${playerPos.x.toFixed(2)}, ${(playerPos.y + 1).toFixed(2)}, ${playerPos.z.toFixed(2)})`)
   }
   
   return world
