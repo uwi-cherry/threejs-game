@@ -3,6 +3,7 @@ import { world } from '../EcsSystem/world'
 import { Transform } from '../EcsSystem/transform/Transform'
 import { InputState } from '../EcsSystem/input/InputState'
 import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
+import { Camera } from './CameraFactory'
 import * as THREE from 'three'
 
 export interface PlayerParams {
@@ -56,6 +57,7 @@ export const createPlayerMesh = (eid: number, scene: THREE.Scene) => {
 // Player movement system
 const playerQuery = defineQuery([Player, Transform])
 const inputQuery = defineQuery([InputState])
+const cameraQuery = defineQuery([Camera, Transform])
 
 export const playerMovementSystem = (world: IWorld, params?: PlayerParams) => {
   // Default parameters
@@ -68,22 +70,47 @@ export const playerMovementSystem = (world: IWorld, params?: PlayerParams) => {
   
   const players = playerQuery(world)
   const inputs = inputQuery(world)
+  const cameras = cameraQuery(world)
   
-  if (players.length === 0 || inputs.length === 0) return world
+  if (players.length === 0 || inputs.length === 0 || cameras.length === 0) return world
   
   const playerEid = players[0]
   const inputEid = inputs[0]
+  const cameraEid = cameras[0]
   
   const moveSpeed = playerParams.moveSpeed
   const jumpHeight = playerParams.jumpHeight
   
-  // Manual movement (WASD)
+  // Manual movement (WASD) - カメラ方向ベース
   const movementX = InputState.movementX[inputEid]
   const movementZ = -InputState.movementY[inputEid]
   
-  // Apply movement
-  Transform.position.x[playerEid] += movementX * moveSpeed
-  Transform.position.z[playerEid] += movementZ * moveSpeed
+  if (Math.abs(movementX) > 0.01 || Math.abs(movementZ) > 0.01) {
+    // カメラの水平回転を取得
+    const cameraRotationH = Camera.rotationH[cameraEid]
+    
+    // カメラ方向ベースの移動ベクトルを計算
+    const forward = new THREE.Vector3(
+      Math.sin(cameraRotationH),
+      0,
+      Math.cos(cameraRotationH)
+    )
+    const right = new THREE.Vector3(
+      Math.cos(cameraRotationH),
+      0,
+      -Math.sin(cameraRotationH)
+    )
+    
+    // 移動ベクトルを合成
+    const moveDirection = new THREE.Vector3()
+    moveDirection.add(right.multiplyScalar(movementX))
+    moveDirection.add(forward.multiplyScalar(movementZ))
+    moveDirection.normalize()
+    
+    // プレイヤー位置を更新
+    Transform.position.x[playerEid] += moveDirection.x * moveSpeed
+    Transform.position.z[playerEid] += moveDirection.z * moveSpeed
+  }
   
   // Simple gravity and ground collision
   const groundY = 2

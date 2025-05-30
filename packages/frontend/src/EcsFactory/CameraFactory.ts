@@ -54,12 +54,9 @@ export const setCameraReference = (camera: THREE.PerspectiveCamera) => {
   threeCamera = camera
 }
 
-// 原神風のマウス感度カーブ関数
-const applySensitivityCurve = (delta: number, sensitivity: number, curvePower: number): number => {
-  const abs = Math.abs(delta)
-  const sign = Math.sign(delta)
-  // 小さな動きは敏感に、大きな動きは緩やかに
-  return sign * Math.pow(abs / 100, curvePower) * 100 * sensitivity
+// シンプルなマウス感度
+const applySensitivity = (delta: number, sensitivity: number): number => {
+  return delta * sensitivity
 }
 
 // 視点の「遊び」を考慮した更新（3D酔い対策）
@@ -131,18 +128,9 @@ const updateCameraPosition = (cameraEid: number, playerPos: THREE.Vector3, param
 }
 
 // カメラリセット関数
-export const resetCameraRotation = (cameraEid: number, playerPos?: THREE.Vector3) => {
+export const resetCameraRotation = (cameraEid: number) => {
   Camera.rotationH[cameraEid] = 0
   Camera.rotationV[cameraEid] = 0.2
-  Camera.velocityH[cameraEid] = 0
-  Camera.velocityV[cameraEid] = 0
-  
-  // 視点もリセット
-  if (playerPos) {
-    Camera.lookPosX[cameraEid] = playerPos.x
-    Camera.lookPosY[cameraEid] = playerPos.y
-    Camera.lookPosZ[cameraEid] = playerPos.z
-  }
 }
 
 export const createCameraEntity = () => {
@@ -177,23 +165,23 @@ export const createCameraEntity = () => {
 }
 
 export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraParams) => {
-  // Default parameters - 3D酔い対策強化版
+  // シンプルなデフォルトパラメータ
   const defaultParams: CameraParams = {
     distance: 15,
     height: 8,
-    sensitivity: 0.0001, // 1/10にさらに削減（超低感度）
-    verticalLimitUp: 45, // さらに控えめに
-    verticalLimitDown: -15,
-    damping: 0.95, // 更に強い減衰で滑らかに
+    sensitivity: 0.001, // 適度な感度
+    verticalLimitUp: 60,
+    verticalLimitDown: -30,
+    damping: 0.9,
     minDistance: 3,
     maxDistance: 25,
     lookAtOffset: 1.0,
-    sensitivityCurvePower: 0.9, // より緩やかなカーブ
-    // 3D酔い対策の「遊び」パラメータ
-    lookPlayDistance: 0.8,      // 視点の遊び（大きめに）
-    cameraPlayDistance: 1.2,    // カメラ位置の遊び（大きめに）
-    followSmooth: 2.0,          // 追従は緩やかに
-    leaveSmooth: 8.0            // 離れる時は少し早めに
+    sensitivityCurvePower: 1.0, // 使わないので1.0
+    // 不要だが型のために残す
+    lookPlayDistance: 0,
+    cameraPlayDistance: 0,
+    followSmooth: 1.0,
+    leaveSmooth: 1.0
   }
   
   const cameraParams = params || defaultParams
@@ -212,9 +200,9 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
   const inSafeZone = playerZ > -5
   const newMode = inSafeZone ? 0 : 1 // 0: fixed, 1: free (TPS)
   
-  // Prevent going forward from safe zone
-  if (inSafeZone && Transform.position.z[playerEid] > 0) {
-    Transform.position.z[playerEid] = 0
+  // Prevent going too far forward from safe zone
+  if (inSafeZone && Transform.position.z[playerEid] > 2) {
+    Transform.position.z[playerEid] = 2
   }
   
   if (Camera.mode[cameraEid] !== newMode) {
@@ -268,19 +256,14 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
     )
     
     if (inputEid !== null) {
-      // マウス入力処理
-      const deltaX = InputState.mouseDelta.x[inputEid]
-      const deltaY = InputState.mouseDelta.y[inputEid]
+      // マウス絶対位置から回転角度を計算
+      const mouseX = InputState.mouseX[inputEid] // -1 to 1
+      const mouseY = InputState.mouseY[inputEid] // -1 to 1
       
-      if (Math.abs(deltaX) > 0.01 || Math.abs(deltaY) > 0.01) {
-        // 非線形感度カーブを適用
-        const sensitiveX = applySensitivityCurve(deltaX, cameraParams.sensitivity, cameraParams.sensitivityCurvePower)
-        const sensitiveY = applySensitivityCurve(deltaY, cameraParams.sensitivity, cameraParams.sensitivityCurvePower)
-        
-        // ベロシティに加算（慣性効果）
-        Camera.velocityH[cameraEid] -= sensitiveX
-        Camera.velocityV[cameraEid] -= sensitiveY
-      }
+      // 絶対位置から絶対的な回転角度を計算
+      const rotationRange = Math.PI // 180度の範囲
+      Camera.rotationH[cameraEid] = mouseX * rotationRange
+      Camera.rotationV[cameraEid] = mouseY * (rotationRange * 0.5) // 縦は半分の範囲
       
       // カメラリセット（Rキー）
       if (InputState.reset?.[inputEid]) {
@@ -288,18 +271,7 @@ export const cameraSystem = (world: IWorld, playerEid: number, params?: CameraPa
       }
     }
     
-    // 慣性の適用
-    Camera.rotationH[cameraEid] += Camera.velocityH[cameraEid]
-    Camera.rotationV[cameraEid] += Camera.velocityV[cameraEid]
-    
-    // 慣性の減衰
-    Camera.velocityH[cameraEid] *= cameraParams.damping
-    Camera.velocityV[cameraEid] *= cameraParams.damping
-    
-    // 水平回転の正規化
-    Camera.rotationH[cameraEid] = Camera.rotationH[cameraEid] % (Math.PI * 2)
-    
-    // 垂直回転の制限
+    // 垂直回転の制限（絶対値ベースなので範囲チェックのみ）
     const upLimit = (cameraParams.verticalLimitUp * Math.PI) / 180
     const downLimit = (cameraParams.verticalLimitDown * Math.PI) / 180
     Camera.rotationV[cameraEid] = Math.max(
