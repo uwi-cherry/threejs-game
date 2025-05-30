@@ -59,85 +59,115 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* メインコンテンツ */}
-      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-        {/* イベントバナー */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 p-6 shadow-xl">
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-2">
-              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">LIMITED</span>
-              <span className="text-white/80 text-xs">残り 2日</span>
+      {/* メインコンテンツ - フルスクリーン左右分割 */}
+      <div className="flex h-screen p-4 gap-8 overflow-hidden">
+        
+        {/* 左側: バナー、お知らせ、デイリー */}
+        <div className="flex flex-col gap-4 w-80">
+          {/* イベントバナー */}
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 p-4 shadow-xl">
+            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">LIMITED</span>
+                <span className="text-white/80 text-xs">残り 2日</span>
+              </div>
+              <h2 className="text-white font-bold text-base mb-1">🎉 新春ガチャフェス</h2>
+              <p className="text-white/90 text-sm">SSRキャラ確定！</p>
             </div>
-            <h2 className="text-white font-bold text-lg mb-1">🎉 新春ガチャフェス</h2>
-            <p className="text-white/90 text-sm">SSRキャラ確定！</p>
+            <div className="absolute -right-3 -bottom-3 text-4xl opacity-30">✨</div>
           </div>
-          <div className="absolute -right-4 -bottom-4 text-6xl opacity-30">✨</div>
+
+          {/* 新着情報 */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <h3 className="text-white font-bold mb-3 text-sm">📢 お知らせ</h3>
+            <div className="space-y-2">
+              <div className="flex items-start space-x-2">
+                <span className="bg-red-500 text-white text-xs px-1 rounded mt-1">新</span>
+                <div>
+                  <div className="text-white text-xs">バレンタインイベント開始！</div>
+                  <div className="text-white/60 text-xs">2024.02.14</div>
+                </div>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="bg-blue-500 text-white text-xs px-1 rounded mt-1">更新</span>
+                <div>
+                  <div className="text-white text-xs">メンテナンス終了のお知らせ</div>
+                  <div className="text-white/60 text-xs">2024.02.13</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* デイリーミッション */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-white font-bold text-sm">📋 デイリーミッション</h3>
+              <span className="text-green-400 text-xs">2/3</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-white text-xs">ログインボーナス</span>
+                </div>
+                <span className="text-green-400 text-xs">✓</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-white text-xs">冒険1回クリア</span>
+                </div>
+                <span className="text-green-400 text-xs">✓</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <span className="text-white/70 text-xs">ガチャ1回</span>
+                </div>
+                <span className="text-yellow-400 text-xs">💎 50</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* メインアクション */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* 右側: ストーリーと探索 */}
+        <div className="flex flex-col gap-4 w-80 ml-auto">
+          {/* ストーリー（大きく） */}
           <button 
             onClick={() => router.push('/story')}
-            className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-8 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex-1"
           >
-            <div className="text-3xl mb-2">📖</div>
-            <div className="text-lg">ストーリー</div>
-            <div className="text-xs opacity-80">第1章 進行中</div>
+            <div className="text-6xl mb-4">📖</div>
+            <div className="text-2xl mb-3">ストーリー</div>
+            <div className="text-base opacity-80 mb-4">第1章 進行中</div>
+            <div className="bg-white/20 rounded-full h-3 mb-2">
+              <div className="bg-white h-3 rounded-full w-1/3"></div>
+            </div>
+            <div className="text-sm opacity-70">進行度 33%</div>
           </button>
           
-          <button className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+          {/* 探索 */}
+          <button className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
             <div className="text-3xl mb-2">🗺️</div>
-            <div className="text-lg">探索</div>
-            <div className="text-xs opacity-80">新エリア発見</div>
+            <div className="text-lg mb-1">探索</div>
+            <div className="text-sm opacity-80">新エリア発見</div>
           </button>
-        </div>
 
-        {/* デイリーミッション */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-white font-bold">📋 デイリーミッション</h3>
-            <span className="text-green-400 text-sm">2/3 完了</span>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-white text-sm">ログインボーナス受取</span>
-              </div>
-              <span className="text-green-400 text-xs">✓</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-white text-sm">冒険を1回クリア</span>
-              </div>
-              <span className="text-green-400 text-xs">✓</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                <span className="text-white/70 text-sm">ガチャを1回引く</span>
-              </div>
-              <span className="text-yellow-400 text-xs">💎 50</span>
-            </div>
+          {/* 追加機能 */}
+          <div className="grid grid-cols-2 gap-4">
+            <button className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center hover:bg-white/20 transition-all">
+              <div className="text-xl mb-1">⚔️</div>
+              <div className="text-white font-bold text-xs">バトル</div>
+            </button>
+            
+            <button className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center hover:bg-white/20 transition-all">
+              <div className="text-xl mb-1">🎁</div>
+              <div className="text-white font-bold text-xs">ガチャ</div>
+            </button>
           </div>
         </div>
 
-        {/* 新着情報 */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
-          <h3 className="text-white font-bold mb-3">📢 お知らせ</h3>
-          <div className="space-y-2">
-            <div className="flex items-start space-x-2">
-              <span className="bg-red-500 text-white text-xs px-1 rounded mt-1">新</span>
-              <span className="text-white text-sm">バレンタインイベント開始！</span>
-            </div>
-            <div className="flex items-start space-x-2">
-              <span className="bg-blue-500 text-white text-xs px-1 rounded mt-1">更新</span>
-              <span className="text-white text-sm">メンテナンス終了のお知らせ</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ボトムナビゲーション */}
