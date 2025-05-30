@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/cannon": "^0.1.13",
     "bitecs": "^0.3.40",
+    "cannon-es": "^0.20.0",
     "lil-gui": "^0.20.0",
     "next": "^15.3.3",
     "react": "^19",

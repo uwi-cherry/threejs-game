@@ -9,5 +9,7 @@ export const InputState = defineComponent({
   mouseY: Types.f32,
   mouseDelta: { x: Types.f32, y: Types.f32 },
   leftClick: Types.ui8,
-  rightClick: Types.ui8
+  rightClick: Types.ui8,
+  mouseWheel: Types.f32,
+  reset: Types.ui8
 })

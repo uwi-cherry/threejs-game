@@ -12,23 +12,47 @@ export class InputSystemManager {
   private mouseDelta = new THREE.Vector2()
   private leftClick = false
   private rightClick = false
+  private mouseWheel = 0
+  private resetPressed = false
+  
+  // バインドしたイベントハンドラーの参照を保持
+  private boundHandleKeyDown: (event: KeyboardEvent) => void
+  private boundHandleKeyUp: (event: KeyboardEvent) => void
+  private boundHandleMouseDown: (event: MouseEvent) => void
+  private boundHandleMouseUp: (event: MouseEvent) => void
+  private boundHandleMouseMove: (event: MouseEvent) => void
+  private boundHandleClick: (event: MouseEvent) => void
+  private boundHandleContextMenu: (event: MouseEvent) => void
+  private boundHandleWheel: (event: WheelEvent) => void
   
   constructor(element: HTMLElement) {
     this.element = element
+    
+    // イベントハンドラーをバインドして参照を保持
+    this.boundHandleKeyDown = this.handleKeyDown.bind(this)
+    this.boundHandleKeyUp = this.handleKeyUp.bind(this)
+    this.boundHandleMouseDown = this.handleMouseDown.bind(this)
+    this.boundHandleMouseUp = this.handleMouseUp.bind(this)
+    this.boundHandleMouseMove = this.handleMouseMove.bind(this)
+    this.boundHandleClick = this.handleClick.bind(this)
+    this.boundHandleContextMenu = this.handleContextMenu.bind(this)
+    this.boundHandleWheel = this.handleWheel.bind(this)
+    
     this.setupEventListeners()
   }
   
   private setupEventListeners() {
     // Keyboard events
-    window.addEventListener('keydown', this.handleKeyDown.bind(this))
-    window.addEventListener('keyup', this.handleKeyUp.bind(this))
+    window.addEventListener('keydown', this.boundHandleKeyDown)
+    window.addEventListener('keyup', this.boundHandleKeyUp)
     
     // Mouse events
-    this.element.addEventListener('mousedown', this.handleMouseDown.bind(this))
-    this.element.addEventListener('mouseup', this.handleMouseUp.bind(this))
-    this.element.addEventListener('mousemove', this.handleMouseMove.bind(this))
-    this.element.addEventListener('click', this.handleClick.bind(this))
-    this.element.addEventListener('contextmenu', this.handleContextMenu.bind(this))
+    this.element.addEventListener('mousedown', this.boundHandleMouseDown)
+    this.element.addEventListener('mouseup', this.boundHandleMouseUp)
+    this.element.addEventListener('mousemove', this.boundHandleMouseMove)
+    this.element.addEventListener('click', this.boundHandleClick)
+    this.element.addEventListener('contextmenu', this.boundHandleContextMenu)
+    this.element.addEventListener('wheel', this.boundHandleWheel)
     
     // Focus
     this.element.tabIndex = 0
@@ -39,6 +63,11 @@ export class InputSystemManager {
   private handleKeyDown(event: KeyboardEvent) {
     event.preventDefault()
     this.keys.add(event.code)
+    
+    // Rキーでカメラリセット
+    if (event.code === 'KeyR') {
+      this.resetPressed = true
+    }
   }
   
   private handleKeyUp(event: KeyboardEvent) {
@@ -72,8 +101,6 @@ export class InputSystemManager {
       event.movementX || 0,
       event.movementY || 0
     )
-    
-    console.log(`InputSystem mouseDelta: X=${this.mouseDelta.x}, Y=${this.mouseDelta.y}`)
   }
   
   private handleClick(event: MouseEvent) {
@@ -85,6 +112,11 @@ export class InputSystemManager {
   private handleContextMenu(event: MouseEvent) {
     event.preventDefault()
     this.rightClick = true
+  }
+  
+  private handleWheel(event: WheelEvent) {
+    event.preventDefault()
+    this.mouseWheel = -event.deltaY * 0.01 // 正規化
   }
   
   public updateInput(world: IWorld) {
@@ -119,21 +151,29 @@ export class InputSystemManager {
       InputState.leftClick[inputEid] = this.leftClick ? 1 : 0
       InputState.rightClick[inputEid] = this.rightClick ? 1 : 0
       
-      // Reset click flags
+      // Wheel and reset input
+      InputState.mouseWheel[inputEid] = this.mouseWheel
+      InputState.reset[inputEid] = this.resetPressed ? 1 : 0
+      
+      // Reset flags
       this.leftClick = false
       this.rightClick = false
+      this.mouseWheel = 0
+      this.resetPressed = false
     }
     
     return world
   }
   
   public destroy() {
-    window.removeEventListener('keydown', this.handleKeyDown.bind(this))
-    window.removeEventListener('keyup', this.handleKeyUp.bind(this))
-    this.element.removeEventListener('mousedown', this.handleMouseDown.bind(this))
-    this.element.removeEventListener('mouseup', this.handleMouseUp.bind(this))
-    this.element.removeEventListener('mousemove', this.handleMouseMove.bind(this))
-    this.element.removeEventListener('click', this.handleClick.bind(this))
-    this.element.removeEventListener('contextmenu', this.handleContextMenu.bind(this))
+    // イベントリスナーの削除（bindしたものは参照を保持する必要がある）
+    window.removeEventListener('keydown', this.boundHandleKeyDown)
+    window.removeEventListener('keyup', this.boundHandleKeyUp)
+    this.element.removeEventListener('mousedown', this.boundHandleMouseDown)
+    this.element.removeEventListener('mouseup', this.boundHandleMouseUp)
+    this.element.removeEventListener('mousemove', this.boundHandleMouseMove)
+    this.element.removeEventListener('click', this.boundHandleClick)
+    this.element.removeEventListener('contextmenu', this.boundHandleContextMenu)
+    this.element.removeEventListener('wheel', this.boundHandleWheel)
   }
 }

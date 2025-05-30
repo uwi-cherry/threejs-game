@@ -5,6 +5,7 @@ import { world } from '../../EcsSystem/world'
 import { renderSystem } from '../../EcsSystem/rendering/RenderSystem'
 import { InputSystemManager } from '../../EcsSystem/input/InputSystem'
 import { ResizeHandler } from '../../infrastructure/ResizeHandler'
+import { PhysicsWorld } from '../../EcsSystem/physics/PhysicsWorld'
 import { 
   createPlayerEntity, 
   createPlayerMesh,
@@ -59,9 +60,14 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
   const [cameraParams] = useState<CameraParams>({
     distance: 15,
     height: 8,
-    sensitivity: 0.005,
-    verticalLimitUp: 45,
-    verticalLimitDown: -45
+    sensitivity: 0.001,
+    verticalLimitUp: 60,
+    verticalLimitDown: -20,
+    damping: 0.92,
+    minDistance: 3,
+    maxDistance: 25,
+    lookAtOffset: 1.0,
+    sensitivityCurvePower: 0.8
   })
 
   const areaParam = Array.isArray(params.area) ? params.area[0] : params.area
@@ -122,10 +128,18 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     cameraDebugger.initializeGUI()
     cameraDebugger.setCameraEntity(cameraEid)
 
+    // Initialize Physics World
+    const physics = PhysicsWorld.getInstance()
+    
     // Create Environment
     EnvironmentCreator.createEnvironment(scene, areaParam || 'forest')
     EnvironmentCreator.createEnemies(scene)
     EnvironmentCreator.createBackground(scene)
+    
+    // Add physics bodies for environment (簡易的に壁を追加)
+    physics.addBox(new THREE.Vector3(0, 5, -50), new THREE.Vector3(100, 10, 1)) // 奥の壁
+    physics.addBox(new THREE.Vector3(-50, 5, 0), new THREE.Vector3(1, 10, 50)) // 左の壁
+    physics.addBox(new THREE.Vector3(50, 5, 0), new THREE.Vector3(1, 10, 50))  // 右の壁
 
     // Initialize Infrastructure
     inputManagerRef.current = new InputSystemManager(renderer.domElement)
@@ -148,8 +162,13 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       animationIdRef.current = requestAnimationFrame(animate)
       
       // Update world time
+      const previousTime = (world as any).time.elapsed || time
       ;(world as any).time.elapsed = time
-      ;(world as any).time.delta = time - ((world as any).time.delta || time)
+      const deltaTime = (time - previousTime) / 1000 // 秒に変換
+      ;(world as any).time.delta = deltaTime
+      
+      // Update physics
+      physics.step(Math.min(deltaTime, 1/30)) // 最大30FPS相当でクランプ
       
       // Run ECS systems
       systemPipeline(world)
@@ -239,7 +258,9 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
             <div>右クリック: 移動停止</div>
             <div>WASD: 手動移動</div>
             <div>マウス: 視点回転（自由エリア）</div>
+            <div>ホイール: ズーム（自由エリア）</div>
             <div>Space: ジャンプ</div>
+            <div>R: カメラリセット（自由エリア）</div>
             <div className="mt-2 pt-2 border-t border-white/20">
               <div className="text-yellow-300">F1: Debug Panel</div>
             </div>
