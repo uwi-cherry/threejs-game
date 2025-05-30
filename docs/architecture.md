@@ -3,22 +3,30 @@
 ## ディレクトリ構造
 
 ```
-src/
-├── app/                    # Next.js pages
-├── components/             # UI components
-│   ├── game/               # ゲーム関連コンポーネント
-│   │   ├── entities/       # プレイヤー、敵、カメラ
-│   │   ├── behaviors/      # 移動、戦闘、カメラ制御
-│   │   └── world/          # ゲーム世界
-│   └── VisualNovelPlayer/  # ビジュアルノベル関連
-├── engine/                 # ゲームエンジン
-│   ├── world.ts           # ECS World
-│   ├── components/        # ECS Components
-│   └── systems/           # ECS Systems
-├── infrastructure/         # インフラ
-│   ├── assets/            # AssetManager
-│   └── auth/              # 認証
-└── types/                 # 型定義
+  engineは汎用ドメイン別ディレクトリ構造:
+
+  engine/
+  ├── world.ts
+  ├── transform/          # 汎用ドメイン
+  │   ├── Transform.ts
+  │   └── TransformSystem.ts
+  ├── physics/            # 汎用ドメイン
+  │   ├── Velocity.ts
+  │   └── MovementSystem.ts
+  ├── rendering/          # 汎用ドメイン
+  │   ├── RenderObject.ts
+  │   └── RenderSystem.ts
+  └── input/              # 汎用ドメイン
+      ├── InputState.ts
+      └── InputSystem.ts
+
+  EcsFactory/             # componentsから分離
+  ├── player/
+  │   └── PlayerFactory.ts
+  ├── enemy/
+  │   └── EnemyFactory.ts
+  └── exploration/
+      └── ExplorationFactory.ts
 ```
 
 ## 設計原則

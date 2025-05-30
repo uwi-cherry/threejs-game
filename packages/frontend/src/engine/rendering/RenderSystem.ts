@@ -1,6 +1,8 @@
-import { IWorld } from 'bitecs'
-import { Transform, ThreeObject, renderableQuery, getThreeObject } from '../World'
-import * as THREE from 'three'
+import { IWorld, defineQuery } from 'bitecs'
+import { Transform } from '../transform/Transform'
+import { RenderObject, getThreeObject } from './RenderObject'
+
+const renderableQuery = defineQuery([Transform, RenderObject])
 
 export const renderSystem = (world: IWorld) => {
   const renderableEntities = renderableQuery(world)

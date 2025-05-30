@@ -2,25 +2,29 @@ import { useRef, useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import * as THREE from 'three'
 import { pipe } from 'bitecs'
+import { world } from '../../../engine/world'
+import { renderSystem } from '../../../engine/rendering/RenderSystem'
+import { InputSystemManager } from '../../../engine/input/InputSystem'
 import { 
-  world, 
   createPlayerEntity, 
-  createCameraEntity, 
-  createEnemyEntity, 
-  setThreeObject,
-  Flying,
-  Camera,
-  playerQuery,
-  cameraQuery
-} from '../../../engine/world'
+  createPlayerMesh,
+  Player,
+  Flying
+} from '../../../EcsFactory/player/PlayerFactory'
 import { 
-  movementSystem, 
+  createEnemyEntity,
+  createEnemyMesh
+} from '../../../EcsFactory/enemy/EnemyFactory'
+import { 
+  createCameraEntity,
+  Camera
+} from '../../../EcsFactory/exploration/CameraFactory'
+import { 
+  playerMovementSystem,
   cameraSystem, 
-  renderSystem, 
   setCameraReference,
-  InputSystemManager,
   createSystemPipeline
-} from '../../../engine/systems'
+} from '../../../EcsFactory/exploration/ExplorationSystems'
 import { addComponent, removeComponent } from 'bitecs'
 
 export interface ECSGameWorldProps {
@@ -97,12 +101,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     const playerEid = createPlayerEntity()
     playerEntityRef.current = playerEid
     
-    const playerGeometry = new THREE.CapsuleGeometry(0.5, 1.5)
-    const playerMaterial = new THREE.MeshLambertMaterial({ color: 0xff69b4 })
-    const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial)
-    playerMesh.castShadow = true
-    setThreeObject(playerEid, playerMesh)
-    scene.add(playerMesh)
+    createPlayerMesh(playerEid, scene)
 
     // Camera Entity
     const cameraEid = createCameraEntity()
@@ -119,7 +118,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     // Create System Pipeline
     const systemPipeline = createSystemPipeline(
       (world) => inputManagerRef.current?.updateInput(world) || world,
-      movementSystem,
+      playerMovementSystem,
       cameraSystem,
       renderSystem
     )
@@ -246,13 +245,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       const z = Math.random() * 6 - 3
       
       const enemyEid = createEnemyEntity(x, y, z)
-      
-      const enemyGeometry = new THREE.BoxGeometry(1, 1, 1)
-      const enemyMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 })
-      const enemyMesh = new THREE.Mesh(enemyGeometry, enemyMaterial)
-      enemyMesh.castShadow = true
-      setThreeObject(enemyEid, enemyMesh)
-      scene.add(enemyMesh)
+      createEnemyMesh(enemyEid, scene)
     }
   }
 

@@ -1,6 +1,8 @@
-import { IWorld } from 'bitecs'
-import { Input, inputQuery } from '../World'
+import { IWorld, defineQuery } from 'bitecs'
+import { InputState } from './InputState'
 import * as THREE from 'three'
+
+const inputQuery = defineQuery([InputState])
 
 export class InputSystemManager {
   private element: HTMLElement
@@ -8,7 +10,6 @@ export class InputSystemManager {
   private mouseDown = false
   private mousePosition = new THREE.Vector2()
   private mouseDelta = new THREE.Vector2()
-  private lastMousePosition = new THREE.Vector2()
   private leftClick = false
   private rightClick = false
   
@@ -102,22 +103,22 @@ export class InputSystemManager {
       if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) movementY += 1
       if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) movementY -= 1
       
-      Input.movementX[inputEid] = movementX
-      Input.movementY[inputEid] = movementY
+      InputState.movementX[inputEid] = movementX
+      InputState.movementY[inputEid] = movementY
       
       // Jump/Descend
-      Input.jump[inputEid] = this.keys.has('Space') ? 1 : 0
-      Input.descend[inputEid] = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 1 : 0
+      InputState.jump[inputEid] = this.keys.has('Space') ? 1 : 0
+      InputState.descend[inputEid] = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 1 : 0
       
       // Mouse input
-      Input.mouseX[inputEid] = this.mousePosition.x
-      Input.mouseY[inputEid] = this.mousePosition.y
-      Input.mouseDelta.x[inputEid] = this.mouseDelta.x
-      Input.mouseDelta.y[inputEid] = this.mouseDelta.y
+      InputState.mouseX[inputEid] = this.mousePosition.x
+      InputState.mouseY[inputEid] = this.mousePosition.y
+      InputState.mouseDelta.x[inputEid] = this.mouseDelta.x
+      InputState.mouseDelta.y[inputEid] = this.mouseDelta.y
       
       // Click input
-      Input.leftClick[inputEid] = this.leftClick ? 1 : 0
-      Input.rightClick[inputEid] = this.rightClick ? 1 : 0
+      InputState.leftClick[inputEid] = this.leftClick ? 1 : 0
+      InputState.rightClick[inputEid] = this.rightClick ? 1 : 0
       
       // Reset click flags
       this.leftClick = false
