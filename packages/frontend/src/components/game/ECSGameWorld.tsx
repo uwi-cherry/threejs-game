@@ -1,5 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { world } from '../../EcsSystem/world'
 import { renderSystem } from '../../EcsSystem/rendering/RenderSystem'
@@ -14,27 +13,11 @@ import {
 } from '../../EcsFactory/PlayerFactory'
 import { GameInputHandler } from '../../EcsFactory/InputFactory'
 import { createCameraEntity, createCameraSystem } from '../../EcsFactory/CameraFactory'
-import { Camera } from '../../EcsSystem/camera/Camera'
-import { cameraInputSystem } from '../../EcsSystem/camera/CameraInputSystem'
-import { 
-  cameraFollowSystem, 
-  setCameraReference, 
-  CameraInputParams, 
-  CameraFollowParams 
-} from '../../EcsSystem/camera/CameraFollowSystem'
-
-type CameraParams = CameraInputParams & CameraFollowParams
+import { setCameraReference } from '../../EcsSystem/camera/CameraFollowSystem'
 import { createSystemPipeline } from './SystemPipeline'
 import { EnvironmentCreator } from './EnvironmentCreator'
-import { cameraDebugger } from '@/debug/CameraDebugger'
 
-export interface ECSGameWorldProps {
-  className?: string
-}
-
-export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
-  const router = useRouter()
-  const params = useParams()
+export default function ECSGameWorld() {
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
   const animationIdRef = useRef<number | null>(null)
@@ -46,40 +29,12 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
   const cameraEntityRef = useRef<number | null>(null)
   const gameInputHandlerRef = useRef<GameInputHandler | null>(null)
 
-  const [isLoading, setIsLoading] = useState(true)
-  const [gameState] = useState({
-    health: 100,
-    energy: 80,
-    score: 0,
-    enemies: 3
-  })
-  const [cameraMode, setCameraMode] = useState<'fixed' | 'free'>('fixed')
-  
-  // Debug parameters state
-  const [playerParams] = useState<PlayerParams>({
+  const playerParams: PlayerParams = {
     moveSpeed: 0.25,
     jumpHeight: 0.8
-  })
-  
-  const [cameraParams] = useState<CameraParams>({
-    // Input system params
-    sensitivity: 0.001,
-    verticalLimitUp: 60,
-    verticalLimitDown: -20,
-    minDistance: 3,
-    maxDistance: 25,
-    
-    // Follow system params
-    distance: 15,
-    height: 8,
-    lookAtOffset: 1.0,
-    lookPlayDistance: 0,
-    cameraPlayDistance: 0,
-    followSmooth: 1.0,
-    leaveSmooth: 1.0
-  })
+  }
 
-  const areaParam = Array.isArray(params.area) ? params.area[0] : params.area
+  const areaParam = 'default'
 
   useEffect(() => {
     if (!mountRef.current) return
@@ -151,9 +106,8 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     // Store camera system params
     const cameraSystem = createCameraSystem(world, playerEid, cameraEntity.systemParams)
     
-    // Initialize debug GUI
-    cameraDebugger.initializeGUI()
-    cameraDebugger.setCameraEntity(cameraEntity.eid)
+    // Initialize camera reference
+    setCameraReference(camera)
 
     // Initialize Physics World
     const physics = PhysicsWorld.getInstance()
@@ -163,19 +117,17 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     EnvironmentCreator.createEnemies(scene)
     EnvironmentCreator.createBackground(scene)
     
-    // Add physics bodies for environment (簡易的に壁を追加)
-    physics.addBox(new THREE.Vector3(0, 5, -50), new THREE.Vector3(100, 10, 1)) // 奥の壁
-    physics.addBox(new THREE.Vector3(-50, 5, 0), new THREE.Vector3(1, 10, 50)) // 左の壁
-    physics.addBox(new THREE.Vector3(50, 5, 0), new THREE.Vector3(1, 10, 50))  // 右の壁
+    // Add physics bodies for environment
+    physics.addBox(new THREE.Vector3(0, 5, -50), new THREE.Vector3(100, 10, 1)) // Back wall
+    physics.addBox(new THREE.Vector3(-50, 5, 0), new THREE.Vector3(1, 10, 50))  // Left wall
+    physics.addBox(new THREE.Vector3(50, 5, 0), new THREE.Vector3(1, 10, 50))   // Right wall
 
-    // Initialize Infrastructure
+    // Initialize input and resize handlers
     inputManagerRef.current = new InputSystemManager(renderer.domElement)
     gameInputHandlerRef.current = GameInputHandler.getInstance()
-    gameInputHandlerRef.current.setF1Handler(() => cameraDebugger.toggle())
     resizeHandlerRef.current = new ResizeHandler(camera, renderer)
 
-    // Set camera reference
-    setCameraReference(camera)
+
     
     // Create System Pipeline
     const systemPipeline = createSystemPipeline(
@@ -184,8 +136,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       cameraSystem,
       renderSystem
     )
-
-    setIsLoading(false)
 
     // Animation Loop
     const animate = (time: number) => {
@@ -203,9 +153,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       // Run ECS systems
       systemPipeline(world)
       
-      // Update React state based on ECS state
-      updateReactState()
-      
       // Render
       renderer.render(scene, camera)
     }
@@ -216,97 +163,51 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current)
       }
-      inputManagerRef.current?.destroy()
-      gameInputHandlerRef.current?.destroy()
-      resizeHandlerRef.current?.destroy()
-      cameraDebugger.destroy()
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement)
+      
+      // Cleanup
+      if (resizeHandlerRef.current) {
+        // ResizeHandler doesn't have a dispose method
+        resizeHandlerRef.current = null
       }
-      renderer.dispose()
+      
+      if (inputManagerRef.current) {
+        // InputSystemManager doesn't have a dispose method
+        inputManagerRef.current = null
+      }
+      
+      if (sceneRef.current) {
+        sceneRef.current.traverse((object: any) => {
+          if (object.dispose) object.dispose()
+          if (object.geometry) object.geometry.dispose()
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach((mat: any) => mat.dispose())
+            } else {
+              object.material.dispose()
+            }
+          }
+        })
+      }
+      
+      if (mountRef.current) {
+        mountRef.current.innerHTML = ''
+      }
+      
+      // Clear world entities
+      // In a real app, you'd want to properly clean up all entities
+      // This is a simplified approach to clear the world
+      const worldObj = world as unknown as Record<string, any>
+      Object.values(worldObj).forEach(value => {
+        if (Array.isArray(value)) {
+          value.length = 0
+        }
+      })
     }
   }, [areaParam])
 
-  // Update React state based on ECS components
-  const updateReactState = () => {
-    if (cameraEntityRef.current !== null) {
-      const cameraEid = cameraEntityRef.current
-      
-      // Update camera mode
-      const mode = Camera.mode[cameraEid] === 0 ? 'fixed' : 'free'
-      if (mode !== cameraMode) {
-        setCameraMode(mode)
-      }
-    }
-  }
-
-
-
-  const handleBack = () => {
-    router.push('/explore')
-  }
-
   return (
-    <div className={`relative w-full h-screen overflow-hidden ${className}`}>
-      {/* Three.js Canvas */}
+    <div className="relative w-full h-full">
       <div ref={mountRef} className="absolute inset-0" />
-
-      {/* UI Overlay */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Top UI */}
-        <div className="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-auto">
-          <button
-            onClick={handleBack}
-            className="bg-black/50 text-white px-3 py-2 rounded-lg hover:bg-black/70 transition-all"
-          >
-            ← 戻る
-          </button>
-          
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white">
-            <div className="text-sm">エリア: {areaParam}</div>
-          </div>
-        </div>
-
-        {/* Status Display */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white pointer-events-auto">
-          <div className="flex space-x-4 text-sm">
-            <div>❤️ {gameState.health}/100</div>
-            <div>⚡ {gameState.energy}/100</div>
-            <div>🏆 {gameState.score}</div>
-            <div>👹 {gameState.enemies}</div>
-            <div className={`px-2 py-1 rounded ${cameraMode === 'fixed' ? 'bg-orange-500/50 text-orange-200' : 'bg-purple-500/50 text-purple-200'}`}>
-              {cameraMode === 'fixed' ? '🛡️ 安置エリア' : '🎮 自由エリア'}
-            </div>
-          </div>
-        </div>
-
-        {/* Control Guide */}
-        <div className="absolute bottom-8 right-8 pointer-events-auto bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white">
-          <h4 className="text-sm font-bold mb-2">🎮 ECS Game Controls</h4>
-          <div className="space-y-1 text-xs">
-            <div>左クリック: 継続移動</div>
-            <div>右クリック: 移動停止</div>
-            <div>WASD: 手動移動</div>
-            <div>マウス: 視点回転（自由エリア）</div>
-            <div>ホイール: ズーム（自由エリア）</div>
-            <div>Space: ジャンプ</div>
-            <div>R: カメラリセット（自由エリア）</div>
-            <div className="mt-2 pt-2 border-t border-white/20">
-              <div className="text-yellow-300">F1: Debug Panel</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Loading Screen */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-black/80 flex items-center justify-center text-white">
-            <div className="text-center">
-              <div className="text-4xl mb-4">🎮</div>
-              <div className="text-xl">ECS World Loading...</div>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
