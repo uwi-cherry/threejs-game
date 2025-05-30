@@ -25,7 +25,7 @@ import {
   setCameraReference,
   createSystemPipeline
 } from '../../../EcsFactory/exploration/ExplorationSystems'
-import { addComponent, removeComponent } from 'bitecs'
+import { addComponent, removeComponent, hasComponent } from 'bitecs'
 
 export interface ECSGameWorldProps {
   className?: string
@@ -173,7 +173,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       const cameraEid = cameraEntityRef.current
       
       // Update flying state
-      const flying = Flying.has(playerEid)
+      const flying = hasComponent(world, Flying, playerEid)
       if (flying !== isFlying) {
         setIsFlying(flying)
       }
@@ -190,7 +190,7 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
   const toggleFlying = () => {
     if (playerEntityRef.current !== null) {
       const playerEid = playerEntityRef.current
-      if (Flying.has(playerEid)) {
+      if (hasComponent(world, Flying, playerEid)) {
         removeComponent(world, Flying, playerEid)
       } else {
         addComponent(world, Flying, playerEid)

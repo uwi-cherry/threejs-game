@@ -1,4 +1,4 @@
-import { IWorld, defineQuery } from 'bitecs'
+import { IWorld, defineQuery, hasComponent } from 'bitecs'
 import { Transform } from '../../engine/transform/Transform'
 import { InputState } from '../../engine/input/InputState'
 import { Player, Flying } from '../player/PlayerFactory'
@@ -25,7 +25,7 @@ export const playerMovementSystem = (world: IWorld) => {
     const playerEid = players[0]
     const inputEid = inputs[0]
     
-    const isFlying = Flying.has(playerEid)
+    const isFlying = hasComponent(world, Flying, playerEid)
     const moveSpeed = isFlying ? 0.3 : 0.15
     const jumpSpeed = 0.2
     
