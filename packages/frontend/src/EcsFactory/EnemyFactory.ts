@@ -1,12 +1,12 @@
 import { addEntity, addComponent } from 'bitecs'
-import { world } from '../../engine/world'
-import { Transform } from '../../engine/transform/Transform'
-import { RenderObject, setThreeObject } from '../../engine/rendering/RenderObject'
+import { world } from '../engine/world'
+import { Transform } from '../engine/transform/Transform'
+import { RenderObject, setThreeObject } from '../engine/rendering/RenderObject'
 import * as THREE from 'three'
 
 // Game-specific components
 import { defineComponent } from 'bitecs'
-import { Health } from '../player/PlayerFactory'
+import { Health } from './PlayerFactory'
 
 export const Enemy = defineComponent()
 

@@ -1,6 +1,6 @@
 'use client'
 
-import ECSGameWorld from '../../../components/game/world/ECSGameWorld'
+import ECSGameWorld from '../../../components/game/ECSGameWorld'
 
 export default function ExploreAreaPage() {
   return <ECSGameWorld />

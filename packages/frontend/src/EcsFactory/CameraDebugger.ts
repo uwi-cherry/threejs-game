@@ -1,5 +1,4 @@
 import { GUI } from 'lil-gui'
-import { Camera } from '../../EcsFactory/exploration/CameraFactory'
 
 export interface CameraDebugParams {
   distance: number

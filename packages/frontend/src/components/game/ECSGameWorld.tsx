@@ -1,30 +1,24 @@
 import { useRef, useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import * as THREE from 'three'
-import { pipe } from 'bitecs'
-import { world } from '../../../engine/world'
-import { renderSystem } from '../../../engine/rendering/RenderSystem'
-import { InputSystemManager } from '../../../engine/input/InputSystem'
+import { world } from '../../engine/world'
+import { renderSystem } from '../../engine/rendering/RenderSystem'
+import { InputSystemManager } from '../../engine/input/InputSystem'
 import { 
   createPlayerEntity, 
   createPlayerMesh,
-  Player
-} from '../../../EcsFactory/player/PlayerFactory'
-import { 
-  createEnemyEntity,
-  createEnemyMesh
-} from '../../../EcsFactory/enemy/EnemyFactory'
+  playerMovementSystem
+} from '../../EcsFactory/PlayerFactory'
+import { GameInputHandler } from '../../EcsFactory/InputFactory'
 import { 
   createCameraEntity,
-  Camera
-} from '../../../EcsFactory/exploration/CameraFactory'
-import { 
-  playerMovementSystem,
-  cameraSystem, 
-  setCameraReference,
-  createSystemPipeline
-} from '../../../EcsFactory/exploration/ExplorationSystems'
-import { cameraDebugger } from '../../../engine/debug/CameraDebugger'
+  Camera,
+  cameraSystem,
+  setCameraReference
+} from '../../EcsFactory/CameraFactory'
+import { createSystemPipeline } from './SystemPipeline'
+import { EnvironmentCreator } from './EnvironmentCreator'
+import { cameraDebugger } from '../../EcsFactory/CameraDebugger'
 
 export interface ECSGameWorldProps {
   className?: string
@@ -41,9 +35,10 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
   // ECS Entity IDs
   const playerEntityRef = useRef<number | null>(null)
   const cameraEntityRef = useRef<number | null>(null)
+  const gameInputHandlerRef = useRef<GameInputHandler | null>(null)
 
   const [isLoading, setIsLoading] = useState(true)
-  const [gameState, setGameState] = useState({
+  const [gameState] = useState({
     health: 100,
     energy: 80,
     score: 0,
@@ -110,18 +105,19 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     cameraDebugger.setCameraEntity(cameraEid)
 
     // Create Environment
-    createEnvironment(scene, areaParam || 'forest')
-    createEnemies(scene)
-    createBackground(scene)
+    EnvironmentCreator.createEnvironment(scene, areaParam || 'forest')
+    EnvironmentCreator.createEnemies(scene)
+    EnvironmentCreator.createBackground(scene)
 
     // Initialize Input System
     inputManagerRef.current = new InputSystemManager(renderer.domElement)
+    gameInputHandlerRef.current = GameInputHandler.getInstance()
 
     // Create System Pipeline
     const systemPipeline = createSystemPipeline(
       (world) => inputManagerRef.current?.updateInput(world) || world,
       playerMovementSystem,
-      cameraSystem,
+      (world) => cameraSystem(world, playerEid),
       renderSystem
     )
 
@@ -153,15 +149,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       renderer.setSize(window.innerWidth, window.innerHeight)
     }
     window.addEventListener('resize', handleResize)
-    
-    // Debug GUI toggle (F1 key)
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'F1') {
-        event.preventDefault()
-        cameraDebugger.toggle()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
 
     // Cleanup
     return () => {
@@ -169,8 +156,8 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
         cancelAnimationFrame(animationIdRef.current)
       }
       inputManagerRef.current?.destroy()
+      gameInputHandlerRef.current?.destroy()
       window.removeEventListener('resize', handleResize)
-      window.removeEventListener('keydown', handleKeyDown)
       cameraDebugger.destroy()
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement)
@@ -193,70 +180,6 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
   }
 
 
-  // Environment Creation Functions
-  const createEnvironment = (scene: THREE.Scene, area: string) => {
-    switch (area) {
-      case 'forest':
-        for (let i = 0; i < 20; i++) {
-          const treeGeometry = new THREE.ConeGeometry(1, 4)
-          const treeMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 })
-          const tree = new THREE.Mesh(treeGeometry, treeMaterial)
-          tree.position.set(
-            Math.random() * 100 - 50,
-            2,
-            Math.random() * 10 - 5
-          )
-          tree.castShadow = true
-          scene.add(tree)
-        }
-        break
-      
-      case 'cave':
-        scene.background = new THREE.Color(0x2f2f2f)
-        for (let i = 0; i < 15; i++) {
-          const rockGeometry = new THREE.BoxGeometry(2, 3, 2)
-          const rockMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 })
-          const rock = new THREE.Mesh(rockGeometry, rockMaterial)
-          rock.position.set(
-            Math.random() * 100 - 50,
-            1.5,
-            Math.random() * 10 - 5
-          )
-          rock.castShadow = true
-          scene.add(rock)
-        }
-        break
-      
-      case 'volcano':
-        scene.background = new THREE.Color(0x8b0000)
-        break
-    }
-  }
-
-  const createEnemies = (scene: THREE.Scene) => {
-    for (let i = 0; i < 5; i++) {
-      const x = Math.random() * 80 - 10
-      const y = 0.5
-      const z = Math.random() * 6 - 3
-      
-      const enemyEid = createEnemyEntity(x, y, z)
-      createEnemyMesh(enemyEid, scene)
-    }
-  }
-
-  const createBackground = (scene: THREE.Scene) => {
-    for (let i = 0; i < 10; i++) {
-      const mountainGeometry = new THREE.ConeGeometry(5, 15)
-      const mountainMaterial = new THREE.MeshLambertMaterial({ color: 0x8fbc8f })
-      const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial)
-      mountain.position.set(
-        Math.random() * 200 - 100,
-        7,
-        -30 - Math.random() * 20
-      )
-      scene.add(mountain)
-    }
-  }
 
   const handleBack = () => {
     router.push('/explore')
