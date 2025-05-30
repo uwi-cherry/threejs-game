@@ -13,13 +13,17 @@ import {
   type PlayerParams
 } from '../../EcsFactory/PlayerFactory'
 import { GameInputHandler } from '../../EcsFactory/InputFactory'
-import { createCameraEntity } from '../../EcsFactory/CameraFactory'
+import { createCameraEntity, createCameraSystem } from '../../EcsFactory/CameraFactory'
 import { Camera } from '../../EcsSystem/camera/Camera'
-import {
-  cameraSystem,
-  setCameraReference,
-  type CameraParams
-} from '../../EcsSystem/camera/CameraSystem'
+import { cameraInputSystem } from '../../EcsSystem/camera/CameraInputSystem'
+import { 
+  cameraFollowSystem, 
+  setCameraReference, 
+  CameraInputParams, 
+  CameraFollowParams 
+} from '../../EcsSystem/camera/CameraFollowSystem'
+
+type CameraParams = CameraInputParams & CameraFollowParams
 import { createSystemPipeline } from './SystemPipeline'
 import { EnvironmentCreator } from './EnvironmentCreator'
 import { cameraDebugger } from '@/debug/CameraDebugger'
@@ -58,16 +62,21 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
   })
   
   const [cameraParams] = useState<CameraParams>({
-    distance: 15,
-    height: 8,
+    // Input system params
     sensitivity: 0.001,
     verticalLimitUp: 60,
     verticalLimitDown: -20,
-    damping: 0.92,
     minDistance: 3,
     maxDistance: 25,
+    
+    // Follow system params
+    distance: 15,
+    height: 8,
     lookAtOffset: 1.0,
-    sensitivityCurvePower: 0.8
+    lookPlayDistance: 0,
+    cameraPlayDistance: 0,
+    followSmooth: 1.0,
+    leaveSmooth: 1.0
   })
 
   const areaParam = Array.isArray(params.area) ? params.area[0] : params.area
@@ -120,13 +129,31 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     
     createPlayerMesh(playerEid, scene)
 
-    // Camera Entity
-    const cameraEid = createCameraEntity()
-    cameraEntityRef.current = cameraEid
+    // Create camera entity and system
+    const cameraEntity = createCameraEntity({
+      camera: camera,
+      initialPosition: { x: 0, y: 8, z: 12 },
+      distance: 15,
+      height: 8,
+      minDistance: 3,
+      maxDistance: 25,
+      lookAtOffset: 1.0,
+      lookPlayDistance: 0,
+      cameraPlayDistance: 0,
+      followSmooth: 1.0,
+      leaveSmooth: 1.0,
+      sensitivity: 0.001,
+      verticalLimitUp: 60,
+      verticalLimitDown: -20
+    })
+    cameraEntityRef.current = cameraEntity.eid
+    
+    // Store camera system params
+    const cameraSystem = createCameraSystem(world, playerEid, cameraEntity.systemParams)
     
     // Initialize debug GUI
     cameraDebugger.initializeGUI()
-    cameraDebugger.setCameraEntity(cameraEid)
+    cameraDebugger.setCameraEntity(cameraEntity.eid)
 
     // Initialize Physics World
     const physics = PhysicsWorld.getInstance()
@@ -147,11 +174,14 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     gameInputHandlerRef.current.setF1Handler(() => cameraDebugger.toggle())
     resizeHandlerRef.current = new ResizeHandler(camera, renderer)
 
+    // Set camera reference
+    setCameraReference(camera)
+    
     // Create System Pipeline
     const systemPipeline = createSystemPipeline(
       (world) => inputManagerRef.current?.updateInput(world) || world,
       (world) => playerMovementSystem(world, playerParams),
-      (world) => cameraSystem(world, playerEid, cameraParams),
+      cameraSystem,
       renderSystem
     )
 
