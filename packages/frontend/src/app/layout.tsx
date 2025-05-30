@@ -1,9 +1,7 @@
-import './globals.css'
+'use client'
 
-export const metadata = {
-  title: 'My Game',
-  description: 'ソーシャルRPG',
-}
+import './globals.css'
+import { GameProviders } from 'narraleaf-react'
 
 export default function RootLayout({
   children,
@@ -12,7 +10,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        <GameProviders>
+          {children}
+        </GameProviders>
+      </body>
     </html>
   )
 }
