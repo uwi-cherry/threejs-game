@@ -3,6 +3,7 @@ import { Transform } from '../../engine/transform/Transform'
 import { InputState } from '../../engine/input/InputState'
 import { Player } from '../player/PlayerFactory'
 import { Camera } from './CameraFactory'
+import { cameraDebugger } from '../../engine/debug/CameraDebugger'
 import * as THREE from 'three'
 
 // Queries
@@ -17,28 +18,40 @@ export const setCameraReference = (camera: THREE.PerspectiveCamera) => {
 }
 
 export const playerMovementSystem = (world: IWorld) => {
-  const deltaTime = (world as any).time.delta / 1000
   const players = playerQuery(world)
   const inputs = inputQuery(world)
+  
+  console.log(`Movement System - Players: ${players.length}, Inputs: ${inputs.length}`)
   
   if (players.length > 0 && inputs.length > 0) {
     const playerEid = players[0]
     const inputEid = inputs[0]
     
-    const moveSpeed = 0.25
-    const jumpHeight = 0.8
+    // Get debug parameters
+    const debugParams = cameraDebugger.getParams()
+    const moveSpeed = debugParams.moveSpeed
+    const jumpHeight = debugParams.jumpHeight
+    
+    console.log(`Debug params - Move speed: ${moveSpeed}, Jump height: ${jumpHeight}`)
     
     // Manual movement (WASD)
     const movementX = InputState.movementX[inputEid]
     const movementZ = -InputState.movementY[inputEid]
     
+    console.log(`Input values - X: ${movementX}, Z: ${movementZ}`)
+    console.log(`Player position before: X=${Transform.position.x[playerEid]}, Y=${Transform.position.y[playerEid]}, Z=${Transform.position.z[playerEid]}`)
+    
     // Apply movement directly
     if (Math.abs(movementX) > 0.01) {
       Transform.position.x[playerEid] += movementX * moveSpeed
+      console.log(`Applied X movement: ${movementX * moveSpeed}`)
     }
     if (Math.abs(movementZ) > 0.01) {
       Transform.position.z[playerEid] += movementZ * moveSpeed
+      console.log(`Applied Z movement: ${movementZ * moveSpeed}`)
     }
+    
+    console.log(`Player position after: X=${Transform.position.x[playerEid]}, Y=${Transform.position.y[playerEid]}, Z=${Transform.position.z[playerEid]}`);
     
     // Simple gravity and ground collision
     const groundY = 2
@@ -98,8 +111,13 @@ export const cameraSystem = (world: IWorld) => {
   
   if (Camera.mode[cameraEid] === 0) {
     // Fixed mode - simple follow camera
-    const distance = Camera.distance[cameraEid]
-    const height = Camera.height[cameraEid]
+    const debugParams = cameraDebugger.getParams()
+    const distance = debugParams.distance
+    const height = debugParams.height
+    
+    // Update ECS values
+    Camera.distance[cameraEid] = distance
+    Camera.height[cameraEid] = height
     
     threeCamera.position.set(
       playerPos.x,
@@ -111,7 +129,11 @@ export const cameraSystem = (world: IWorld) => {
   } else {
     // TPS mode (原神風) - free camera with full rotation
     if (inputEid) {
-      const sensitivity = 0.005  // Increased sensitivity for better responsiveness
+      // Get debug parameters for sensitivity and limits
+      const debugParams = cameraDebugger.getParams()
+      const sensitivity = debugParams.sensitivity
+      
+      console.log(`Camera debug params - Distance: ${debugParams.distance}, Height: ${debugParams.height}, Sensitivity: ${sensitivity}`)
       
       // Mouse delta accumulation for smoother rotation
       const deltaX = InputState.mouseDelta.x[inputEid]
@@ -124,18 +146,29 @@ export const cameraSystem = (world: IWorld) => {
         // Wrap horizontal rotation to prevent accumulation
         Camera.rotationH[cameraEid] = Camera.rotationH[cameraEid] % (Math.PI * 2)
         
-        // Clamp vertical rotation for natural feel
+        // Clamp vertical rotation using debug parameters
+        const upLimit = (debugParams.verticalLimitUp * Math.PI) / 180
+        const downLimit = (debugParams.verticalLimitDown * Math.PI) / 180
         Camera.rotationV[cameraEid] = Math.max(
-          -Math.PI / 4,  // Look down limit (45 degrees)
-          Math.min(Math.PI / 4, Camera.rotationV[cameraEid])  // Look up limit (45 degrees)
+          downLimit,
+          Math.min(upLimit, Camera.rotationV[cameraEid])
         )
         
       }
     }
     
-    const distance = Camera.distance[cameraEid]
+    // Use debug parameters if available, otherwise use ECS values
+    const debugParams = cameraDebugger.getParams()
+    const distance = debugParams.distance
+    const height = debugParams.height
     const rotH = Camera.rotationH[cameraEid]
     const rotV = Camera.rotationV[cameraEid]
+    
+    // Update ECS values to match debug parameters
+    Camera.distance[cameraEid] = distance
+    Camera.height[cameraEid] = height
+    
+    console.log(`Using camera values - Distance: ${distance}, Height: ${height}, RotH: ${rotH}, RotV: ${rotV}`)
     
     // Spherical coordinate system for smooth camera movement
     const cosV = Math.cos(rotV)

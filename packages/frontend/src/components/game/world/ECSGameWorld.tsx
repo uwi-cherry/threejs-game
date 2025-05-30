@@ -24,6 +24,7 @@ import {
   setCameraReference,
   createSystemPipeline
 } from '../../../EcsFactory/exploration/ExplorationSystems'
+import { cameraDebugger } from '../../../engine/debug/CameraDebugger'
 
 export interface ECSGameWorldProps {
   className?: string
@@ -103,6 +104,10 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
     // Camera Entity
     const cameraEid = createCameraEntity()
     cameraEntityRef.current = cameraEid
+    
+    // Initialize debug GUI
+    cameraDebugger.initializeGUI()
+    cameraDebugger.setCameraEntity(cameraEid)
 
     // Create Environment
     createEnvironment(scene, areaParam || 'forest')
@@ -148,6 +153,15 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       renderer.setSize(window.innerWidth, window.innerHeight)
     }
     window.addEventListener('resize', handleResize)
+    
+    // Debug GUI toggle (F1 key)
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'F1') {
+        event.preventDefault()
+        cameraDebugger.toggle()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
 
     // Cleanup
     return () => {
@@ -156,6 +170,8 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
       }
       inputManagerRef.current?.destroy()
       window.removeEventListener('resize', handleResize)
+      window.removeEventListener('keydown', handleKeyDown)
+      cameraDebugger.destroy()
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement)
       }
@@ -289,6 +305,9 @@ export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
             <div>WASD: 手動移動</div>
             <div>マウス: 視点回転（自由エリア）</div>
             <div>Space: ジャンプ</div>
+            <div className="mt-2 pt-2 border-t border-white/20">
+              <div className="text-yellow-300">F1: Debug Panel</div>
+            </div>
           </div>
         </div>
 

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "bitecs": "^0.3.40",
+    "lil-gui": "^0.20.0",
     "next": "^15.3.3",
     "react": "^19",
     "react-dom": "^19",
