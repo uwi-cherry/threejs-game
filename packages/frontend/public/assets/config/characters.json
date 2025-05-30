@@ -1,0 +1,44 @@
+{
+  "characters": [
+    {
+      "id": "lina",
+      "name": "リナ",
+      "description": "明るく元気な冒険者",
+      "avatar": "👩‍🦰",
+      "stats": {
+        "level": 1,
+        "hp": 100,
+        "mp": 50,
+        "attack": 15,
+        "defense": 10
+      },
+      "skills": [
+        {
+          "id": "heal",
+          "name": "ヒール",
+          "description": "HPを回復する"
+        }
+      ]
+    },
+    {
+      "id": "player",
+      "name": "プレイヤー",
+      "description": "新米冒険者",
+      "avatar": "🧙‍♂️",
+      "stats": {
+        "level": 1,
+        "hp": 80,
+        "mp": 30,
+        "attack": 12,
+        "defense": 8
+      },
+      "skills": [
+        {
+          "id": "basic_attack",
+          "name": "基本攻撃",
+          "description": "通常の攻撃"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "items": [
+    {
+      "id": "health_potion",
+      "name": "体力ポーション",
+      "description": "HPを50回復する",
+      "type": "consumable",
+      "rarity": "common",
+      "value": 50,
+      "effect": {
+        "type": "heal",
+        "amount": 50
+      }
+    },
+    {
+      "id": "mana_potion",
+      "name": "マナポーション", 
+      "description": "MPを30回復する",
+      "type": "consumable",
+      "rarity": "common",
+      "value": 30,
+      "effect": {
+        "type": "mana_restore",
+        "amount": 30
+      }
+    },
+    {
+      "id": "wooden_sword",
+      "name": "木の剣",
+      "description": "初心者用の剣",
+      "type": "weapon",
+      "rarity": "common",
+      "value": 100,
+      "stats": {
+        "attack": 5
+      }
+    },
+    {
+      "id": "leather_armor",
+      "name": "革の鎧",
+      "description": "基本的な防具",
+      "type": "armor",
+      "rarity": "common", 
+      "value": 150,
+      "stats": {
+        "defense": 3
+      }
+    }
+  ]
+}

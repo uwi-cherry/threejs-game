@@ -119,7 +119,14 @@ class AssetManager {
     return new Promise((resolve, reject) => {
       const img = new Image()
       img.onload = () => resolve(img)
-      img.onerror = () => reject(new Error(`Failed to load image: ${url}`))
+      img.onerror = () => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`Failed to load image: ${url} (development mode: continuing)`)
+          resolve(new Image()) // 空の画像オブジェクトを返す
+        } else {
+          reject(new Error(`Failed to load image: ${url}`))
+        }
+      }
       img.src = url
     })
   }
@@ -128,7 +135,14 @@ class AssetManager {
     return new Promise((resolve, reject) => {
       const audio = new Audio()
       audio.oncanplaythrough = () => resolve(audio)
-      audio.onerror = () => reject(new Error(`Failed to load audio: ${url}`))
+      audio.onerror = () => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`Failed to load audio: ${url} (development mode: continuing)`)
+          resolve(new Audio()) // 空の音声オブジェクトを返す
+        } else {
+          reject(new Error(`Failed to load audio: ${url}`))
+        }
+      }
       audio.src = url
     })
   }
@@ -137,7 +151,14 @@ class AssetManager {
     return new Promise((resolve, reject) => {
       const video = document.createElement('video')
       video.oncanplaythrough = () => resolve(video)
-      video.onerror = () => reject(new Error(`Failed to load video: ${url}`))
+      video.onerror = () => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`Failed to load video: ${url} (development mode: continuing)`)
+          resolve(document.createElement('video')) // 空の動画オブジェクトを返す
+        } else {
+          reject(new Error(`Failed to load video: ${url}`))
+        }
+      }
       video.src = url
     })
   }
@@ -153,7 +174,12 @@ class AssetManager {
   private async loadText(url: string): Promise<string> {
     const response = await fetch(url)
     if (!response.ok) {
-      throw new Error(`Failed to load text: ${url}`)
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Failed to load text: ${url} (development mode: continuing)`)
+        return '' // 空の文字列を返す
+      } else {
+        throw new Error(`Failed to load text: ${url}`)
+      }
     }
     return response.text()
   }

@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "title": "My Game",
+  "description": "ソーシャルRPG",
+  "settings": {
+    "maxLevel": 100,
+    "startingLevel": 1,
+    "startingCoins": 1000,
+    "startingExp": 0
+  },
+  "ui": {
+    "theme": "dark",
+    "animationSpeed": "normal",
+    "soundEnabled": true,
+    "musicEnabled": true
+  },
+  "gameplay": {
+    "autoSave": true,
+    "autoSaveInterval": 300,
+    "difficulty": "normal"
+  },
+  "features": {
+    "storyMode": true,
+    "multiPlayer": false,
+    "achievements": true,
+    "dailyRewards": true
+  }
+}
