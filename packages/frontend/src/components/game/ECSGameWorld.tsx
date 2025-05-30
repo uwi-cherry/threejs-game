@@ -13,13 +13,13 @@ import {
   type PlayerParams
 } from '../../EcsFactory/PlayerFactory'
 import { GameInputHandler } from '../../EcsFactory/InputFactory'
-import { 
-  createCameraEntity,
-  Camera,
+import { createCameraEntity } from '../../EcsFactory/CameraFactory'
+import { Camera } from '../../EcsSystem/camera/Camera'
+import {
   cameraSystem,
   setCameraReference,
   type CameraParams
-} from '../../EcsFactory/CameraFactory'
+} from '../../EcsSystem/camera/CameraSystem'
 import { createSystemPipeline } from './SystemPipeline'
 import { EnvironmentCreator } from './EnvironmentCreator'
 import { cameraDebugger } from '@/debug/CameraDebugger'
