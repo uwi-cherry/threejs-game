@@ -50,7 +50,7 @@ export default function TitlePage() {
 
     try {
       // セッション確認
-      const result = await AuthService.verifyExistingToken()
+      const result = await AuthService.verifyExistingSession()
       if (result.success) {
         setAuthMessage('認証済み! ホーム画面へ...')
         setTimeout(() => {
