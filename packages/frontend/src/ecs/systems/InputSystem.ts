@@ -1,5 +1,5 @@
 import { IWorld, defineQuery } from 'bitecs'
-import { InputState } from './InputState'
+import { InputState } from '../components/InputState'
 import * as THREE from 'three'
 
 const inputQuery = defineQuery([InputState])

@@ -1,12 +1,12 @@
 import { addEntity, addComponent } from 'bitecs'
-import { world } from '../EcsSystem/world'
-import { Transform } from '../EcsSystem/transform/Transform'
-import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
+import { world } from '../world'
+import { Transform } from '../components/Transform'
+import { RenderObject, setThreeObject } from '../components/RenderObject'
 import * as THREE from 'three'
 
 // Game-specific components
 import { defineComponent } from 'bitecs'
-import { Health, initializePlayerComponents } from '../EcsSystem/player/PlayerComponents'
+import { Health, initializePlayerComponents } from '../components/PlayerComponents'
 
 // コンポーネントを初期化
 const { Health: HealthComponent } = initializePlayerComponents()

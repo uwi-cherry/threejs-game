@@ -1,9 +1,9 @@
 import { IWorld, defineQuery } from 'bitecs'
 import * as THREE from 'three'
-import { Transform } from '../transform/Transform'
-import { InputState } from '../input/InputState'
-import { Camera } from '../camera/Camera'
-import { Player } from './PlayerComponents'
+import { Transform } from '../components/Transform'
+import { InputState } from '../components/InputState'
+import { Camera } from '../components/Camera'
+import { Player } from '../components/PlayerComponents'
 
 // クエリを定義
 const playerQuery = defineQuery([Player, Transform]) as (world: IWorld) => number[]

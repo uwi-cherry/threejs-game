@@ -1,8 +1,8 @@
 import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
-import { world } from '../../EcsSystem/world'
-import { renderSystem } from '../../EcsSystem/rendering/RenderSystem'
-import { InputSystemManager } from '../../EcsSystem/input/InputSystem'
+import { world } from '../../ecs/world'
+import { renderSystem } from '../../ecs/systems/RenderSystem'
+import { InputSystemManager } from '../../ecs/systems/InputSystem'
 import { ResizeHandler } from '../../infrastructure/ResizeHandler'
 import { PhysicsWorld } from '../../EcsSystem/physics/PhysicsWorld'
 import { 
@@ -10,10 +10,10 @@ import {
   createPlayerMesh,
   createPlayerMovementSystem,
   DEFAULT_PLAYER_PARAMS
-} from '../../EcsFactory/PlayerFactory'
+} from '../../ecs/factory/PlayerFactory'
 
-import { createCameraEntity, createCameraSystem } from '../../EcsFactory/CameraFactory'
-import { setCameraReference } from '../../EcsSystem/camera/CameraFollowSystem'
+import { createCameraEntity, createCameraSystem } from '../../ecs/factory/CameraFactory'
+import { setCameraReference } from '../../ecs/systems/CameraFollowSystem'
 import { createSystemPipeline } from './SystemPipeline'
 import { EnvironmentCreator } from './EnvironmentCreator'
 

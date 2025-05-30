@@ -1,8 +1,8 @@
 import { IWorld, defineQuery } from 'bitecs'
 import * as THREE from 'three'
-import { Camera } from './Camera'
-import { Transform } from '../transform/Transform'
-import { PhysicsWorld } from '../physics/PhysicsWorld'
+import { Camera } from '../components/Camera'
+import { Transform } from '../components/Transform'
+import { PhysicsWorld } from '../../ecs/systems/PhysicsWorld'
 
 export interface CameraInputParams {
   sensitivity: number

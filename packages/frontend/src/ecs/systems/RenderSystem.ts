@@ -1,6 +1,6 @@
 import { IWorld, defineQuery } from 'bitecs'
-import { Transform } from '../transform/Transform'
-import { RenderObject, getThreeObject } from './RenderObject'
+import { Transform } from '../components/Transform'
+import { RenderObject, getThreeObject } from '../components/RenderObject'
 
 const renderableQuery = defineQuery([Transform, RenderObject])
 

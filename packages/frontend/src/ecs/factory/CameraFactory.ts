@@ -1,11 +1,11 @@
 import { IWorld } from 'bitecs'
 import { addEntity, addComponent } from 'bitecs'
-import { world } from '../EcsSystem/world'
-import { Transform } from '../EcsSystem/transform/Transform'
-import { Camera } from '../EcsSystem/camera/Camera'
-import { setCameraReference } from '../EcsSystem/camera/CameraFollowSystem'
-import { cameraInputSystem } from '../EcsSystem/camera/CameraInputSystem'
-import { cameraFollowSystem } from '../EcsSystem/camera/CameraFollowSystem'
+import { world } from '../world'
+import { Transform } from '../components/Transform'
+import { Camera } from '../components/Camera'
+import { setCameraReference } from '../systems/CameraFollowSystem'
+import { cameraInputSystem } from '../systems/CameraInputSystem'
+import { cameraFollowSystem } from '../systems/CameraFollowSystem'
 import { PerspectiveCamera } from 'three'
 
 export interface CameraSystemParams {

@@ -1,14 +1,14 @@
 import { addEntity, addComponent } from 'bitecs'
-import { world } from '../EcsSystem/world'
-import { Transform } from '../EcsSystem/transform/Transform'
-import { InputState } from '../EcsSystem/input/InputState'
-import { RenderObject, setThreeObject } from '../EcsSystem/rendering/RenderObject'
+import { world } from '../world'
+import { Transform } from '../components/Transform'
+import { InputState } from '../components/InputState'
+import { RenderObject, setThreeObject } from '../components/RenderObject'
 import { 
   Player, 
   Health, 
   DEFAULT_PLAYER_PARAMS,
   initializePlayerComponents
-} from '../EcsSystem/player/PlayerComponents'
+} from '../components/PlayerComponents'
 
 // コンポーネントを初期化
 const { Player: PlayerComponent, Health: HealthComponent } = initializePlayerComponents()
@@ -80,5 +80,5 @@ export const createPlayerMesh = (eid: number, scene: THREE.Scene, color: number 
 }
 
 // 後方互換性のためエクスポート
-export { DEFAULT_PLAYER_PARAMS } from '../EcsSystem/player/PlayerComponents'
-export { createPlayerMovementSystem } from '../EcsSystem/player/PlayerMovementSystem'
+export { DEFAULT_PLAYER_PARAMS } from '../components/PlayerComponents'
+export { createPlayerMovementSystem } from '../systems/PlayerMovementSystem'

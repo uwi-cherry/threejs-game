@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { createEnemyEntity, createEnemyMesh } from '../../EcsFactory/EnemyFactory'
+import { createEnemyEntity, createEnemyMesh } from '../../ecs/factory/EnemyFactory'
 
 export class EnvironmentCreator {
   

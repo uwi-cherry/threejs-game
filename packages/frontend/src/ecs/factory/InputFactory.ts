@@ -1,6 +1,6 @@
 import { addEntity, addComponent } from 'bitecs'
-import { world } from '../EcsSystem/world'
-import { InputState } from '../EcsSystem/input/InputState'
+import { world } from '../world'
+import { InputState } from '../components/InputState'
 
 /**
  * 入力関連のエンティティを作成するファクトリ関数

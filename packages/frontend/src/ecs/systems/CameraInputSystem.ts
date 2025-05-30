@@ -1,6 +1,6 @@
 import { IWorld, defineQuery } from 'bitecs'
-import { Camera } from './Camera'
-import { InputState } from '../input/InputState'
+import { Camera } from '../components/Camera'
+import { InputState } from '../components/InputState'
 import { resetCameraRotation, CameraInputParams } from './CameraFollowSystem'
 
 const cameraQuery = defineQuery([Camera])
