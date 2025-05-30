@@ -77,7 +77,10 @@ export default function HomePage() {
 
         {/* メインアクション */}
         <div className="grid grid-cols-2 gap-4">
-          <button className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+          <button 
+            onClick={() => router.push('/story')}
+            className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 text-white font-bold text-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+          >
             <div className="text-3xl mb-2">📖</div>
             <div className="text-lg">ストーリー</div>
             <div className="text-xs opacity-80">第1章 進行中</div>
