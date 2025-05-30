@@ -12,7 +12,7 @@ import {
   Camera,
   playerQuery,
   cameraQuery
-} from '../../ecs/World'
+} from '../../../engine/world'
 import { 
   movementSystem, 
   cameraSystem, 
@@ -20,7 +20,7 @@ import {
   setCameraReference,
   InputSystemManager,
   createSystemPipeline
-} from '../../ecs/systems'
+} from '../../../engine/systems'
 import { addComponent, removeComponent } from 'bitecs'
 
 export interface ECSGameWorldProps {
