@@ -1,0 +1,349 @@
+import { useRef, useEffect, useState } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import * as THREE from 'three'
+import { pipe } from 'bitecs'
+import { 
+  world, 
+  createPlayerEntity, 
+  createCameraEntity, 
+  createEnemyEntity, 
+  setThreeObject,
+  Flying,
+  Camera,
+  playerQuery,
+  cameraQuery
+} from '../../ecs/World'
+import { 
+  movementSystem, 
+  cameraSystem, 
+  renderSystem, 
+  setCameraReference,
+  InputSystemManager,
+  createSystemPipeline
+} from '../../ecs/systems'
+import { addComponent, removeComponent } from 'bitecs'
+
+export interface ECSGameWorldProps {
+  className?: string
+}
+
+export default function ECSGameWorld({ className = '' }: ECSGameWorldProps) {
+  const router = useRouter()
+  const params = useParams()
+  const mountRef = useRef<HTMLDivElement>(null)
+  const sceneRef = useRef<THREE.Scene | null>(null)
+  const animationIdRef = useRef<number | null>(null)
+  const inputManagerRef = useRef<InputSystemManager | null>(null)
+  
+  // ECS Entity IDs
+  const playerEntityRef = useRef<number | null>(null)
+  const cameraEntityRef = useRef<number | null>(null)
+
+  const [isLoading, setIsLoading] = useState(true)
+  const [gameState, setGameState] = useState({
+    health: 100,
+    energy: 80,
+    score: 0,
+    enemies: 3
+  })
+  const [isFlying, setIsFlying] = useState(false)
+  const [cameraMode, setCameraMode] = useState<'fixed' | 'free'>('fixed')
+
+  const areaParam = Array.isArray(params.area) ? params.area[0] : params.area
+
+  useEffect(() => {
+    if (!mountRef.current) return
+
+    // Create Scene
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x87ceeb)
+    sceneRef.current = scene
+
+    // Create Camera
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+    camera.position.set(0, 8, 12)
+    camera.lookAt(0, 2, 0)
+    setCameraReference(camera)
+
+    // Create Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    mountRef.current.appendChild(renderer.domElement)
+
+    // Setup Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6)
+    scene.add(ambientLight)
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+    directionalLight.position.set(50, 50, 50)
+    directionalLight.castShadow = true
+    directionalLight.shadow.mapSize.width = 2048
+    directionalLight.shadow.mapSize.height = 2048
+    scene.add(directionalLight)
+
+    // Create Ground
+    const groundGeometry = new THREE.PlaneGeometry(200, 20)
+    const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x3a5f3a })
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial)
+    ground.rotation.x = -Math.PI / 2
+    ground.receiveShadow = true
+    scene.add(ground)
+
+    // Create ECS Entities
+    
+    // Player Entity
+    const playerEid = createPlayerEntity()
+    playerEntityRef.current = playerEid
+    
+    const playerGeometry = new THREE.CapsuleGeometry(0.5, 1.5)
+    const playerMaterial = new THREE.MeshLambertMaterial({ color: 0xff69b4 })
+    const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial)
+    playerMesh.castShadow = true
+    setThreeObject(playerEid, playerMesh)
+    scene.add(playerMesh)
+
+    // Camera Entity
+    const cameraEid = createCameraEntity()
+    cameraEntityRef.current = cameraEid
+
+    // Create Environment
+    createEnvironment(scene, areaParam)
+    createEnemies(scene)
+    createBackground(scene, areaParam)
+
+    // Initialize Input System
+    inputManagerRef.current = new InputSystemManager(renderer.domElement)
+
+    // Create System Pipeline
+    const systemPipeline = createSystemPipeline(
+      (world) => inputManagerRef.current?.updateInput(world) || world,
+      movementSystem,
+      cameraSystem,
+      renderSystem
+    )
+
+    setIsLoading(false)
+
+    // Animation Loop
+    const animate = (time: number) => {
+      animationIdRef.current = requestAnimationFrame(animate)
+      
+      // Update world time
+      world.time.elapsed = time
+      world.time.delta = time - (world.time.delta || time)
+      
+      // Run ECS systems
+      systemPipeline(world)
+      
+      // Update React state based on ECS state
+      updateReactState()
+      
+      // Render
+      renderer.render(scene, camera)
+    }
+    animate(0)
+
+    // Handle Resize
+    const handleResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+    window.addEventListener('resize', handleResize)
+
+    // Cleanup
+    return () => {
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current)
+      }
+      inputManagerRef.current?.destroy()
+      window.removeEventListener('resize', handleResize)
+      if (mountRef.current && renderer.domElement) {
+        mountRef.current.removeChild(renderer.domElement)
+      }
+      renderer.dispose()
+    }
+  }, [areaParam])
+
+  // Update React state based on ECS components
+  const updateReactState = () => {
+    if (playerEntityRef.current !== null && cameraEntityRef.current !== null) {
+      const playerEid = playerEntityRef.current
+      const cameraEid = cameraEntityRef.current
+      
+      // Update flying state
+      const flying = Flying.has(playerEid)
+      if (flying !== isFlying) {
+        setIsFlying(flying)
+      }
+      
+      // Update camera mode
+      const mode = Camera.mode[cameraEid] === 0 ? 'fixed' : 'free'
+      if (mode !== cameraMode) {
+        setCameraMode(mode)
+      }
+    }
+  }
+
+  // Toggle flying mode
+  const toggleFlying = () => {
+    if (playerEntityRef.current !== null) {
+      const playerEid = playerEntityRef.current
+      if (Flying.has(playerEid)) {
+        removeComponent(world, Flying, playerEid)
+      } else {
+        addComponent(world, Flying, playerEid)
+      }
+    }
+  }
+
+  // Environment Creation Functions
+  const createEnvironment = (scene: THREE.Scene, area: string) => {
+    switch (area) {
+      case 'forest':
+        for (let i = 0; i < 20; i++) {
+          const treeGeometry = new THREE.ConeGeometry(1, 4)
+          const treeMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 })
+          const tree = new THREE.Mesh(treeGeometry, treeMaterial)
+          tree.position.set(
+            Math.random() * 100 - 50,
+            2,
+            Math.random() * 10 - 5
+          )
+          tree.castShadow = true
+          scene.add(tree)
+        }
+        break
+      
+      case 'cave':
+        scene.background = new THREE.Color(0x2f2f2f)
+        for (let i = 0; i < 15; i++) {
+          const rockGeometry = new THREE.BoxGeometry(2, 3, 2)
+          const rockMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 })
+          const rock = new THREE.Mesh(rockGeometry, rockMaterial)
+          rock.position.set(
+            Math.random() * 100 - 50,
+            1.5,
+            Math.random() * 10 - 5
+          )
+          rock.castShadow = true
+          scene.add(rock)
+        }
+        break
+      
+      case 'volcano':
+        scene.background = new THREE.Color(0x8b0000)
+        break
+    }
+  }
+
+  const createEnemies = (scene: THREE.Scene) => {
+    for (let i = 0; i < 5; i++) {
+      const x = Math.random() * 80 - 10
+      const y = 0.5
+      const z = Math.random() * 6 - 3
+      
+      const enemyEid = createEnemyEntity(x, y, z)
+      
+      const enemyGeometry = new THREE.BoxGeometry(1, 1, 1)
+      const enemyMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 })
+      const enemyMesh = new THREE.Mesh(enemyGeometry, enemyMaterial)
+      enemyMesh.castShadow = true
+      setThreeObject(enemyEid, enemyMesh)
+      scene.add(enemyMesh)
+    }
+  }
+
+  const createBackground = (scene: THREE.Scene, area: string) => {
+    for (let i = 0; i < 10; i++) {
+      const mountainGeometry = new THREE.ConeGeometry(5, 15)
+      const mountainMaterial = new THREE.MeshLambertMaterial({ color: 0x8fbc8f })
+      const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial)
+      mountain.position.set(
+        Math.random() * 200 - 100,
+        7,
+        -30 - Math.random() * 20
+      )
+      scene.add(mountain)
+    }
+  }
+
+  const handleBack = () => {
+    router.push('/explore')
+  }
+
+  return (
+    <div className={`relative w-full h-screen overflow-hidden ${className}`}>
+      {/* Three.js Canvas */}
+      <div ref={mountRef} className="absolute inset-0" />
+
+      {/* UI Overlay */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Top UI */}
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-auto">
+          <button
+            onClick={handleBack}
+            className="bg-black/50 text-white px-3 py-2 rounded-lg hover:bg-black/70 transition-all"
+          >
+            ← 戻る
+          </button>
+          
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white">
+            <div className="text-sm">エリア: {areaParam}</div>
+          </div>
+        </div>
+
+        {/* Status Display */}
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white pointer-events-auto">
+          <div className="flex space-x-4 text-sm">
+            <div>❤️ {gameState.health}/100</div>
+            <div>⚡ {gameState.energy}/100</div>
+            <div>🏆 {gameState.score}</div>
+            <div>👹 {gameState.enemies}</div>
+            <div className={`px-2 py-1 rounded ${isFlying ? 'bg-blue-500/50 text-blue-200' : 'bg-green-500/50 text-green-200'}`}>
+              {isFlying ? '🛩️ 飛行中' : '🚶 徒歩'}
+            </div>
+            <div className={`px-2 py-1 rounded ${cameraMode === 'fixed' ? 'bg-orange-500/50 text-orange-200' : 'bg-purple-500/50 text-purple-200'}`}>
+              {cameraMode === 'fixed' ? '🛡️ 安置エリア' : '🎮 自由エリア'}
+            </div>
+          </div>
+        </div>
+
+        {/* Control Guide */}
+        <div className="absolute bottom-8 right-8 pointer-events-auto bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white">
+          <h4 className="text-sm font-bold mb-2">🎮 ECS Game Controls</h4>
+          <div className="space-y-1 text-xs">
+            <div>左クリック: 継続移動</div>
+            <div>右クリック: 移動停止</div>
+            <div>WASD: 手動移動</div>
+            <div>マウス: 視点回転（自由エリア）</div>
+            <div>Space: ジャンプ/飛行切替</div>
+            <div>Shift: 降下（飛行時）</div>
+          </div>
+          <button
+            onClick={toggleFlying}
+            className={`mt-3 px-3 py-1 rounded-lg text-xs transition-all ${
+              isFlying 
+                ? 'bg-blue-500/50 text-blue-200 hover:bg-blue-500/70' 
+                : 'bg-green-500/50 text-green-200 hover:bg-green-500/70'
+            }`}
+          >
+            {isFlying ? '🚶 徒歩モード' : '🛩️ 飛行モード'}
+          </button>
+        </div>
+
+        {/* Loading Screen */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-black/80 flex items-center justify-center text-white">
+            <div className="text-center">
+              <div className="text-4xl mb-4">🎮</div>
+              <div className="text-xl">ECS World Loading...</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
