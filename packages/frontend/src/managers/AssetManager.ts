@@ -50,7 +50,7 @@ class AssetManager {
     const asset: Asset = { url, type, loaded: false }
     this.assets.set(name, asset)
 
-    const loadPromise = this.loadAssetData(asset, name)
+    const loadPromise = this.loadAssetData(asset)
     this.loadingPromises.set(name, loadPromise)
 
     try {
@@ -98,7 +98,7 @@ class AssetManager {
     await Promise.all(loadPromises)
   }
 
-  private async loadAssetData(asset: Asset, name: string): Promise<any> {
+  private async loadAssetData(asset: Asset): Promise<any> {
     switch (asset.type) {
       case 'image':
         return this.loadImage(asset.url)

@@ -11,11 +11,20 @@ const player = new Character("あなた", {
   color: "#4ecdc4" 
 });
 
-// シーン1: 出会い
+// シーンを先に宣言
 const scene1 = new Scene("出会い", {
   background: "/images/tavern.jpg" // 酒場の背景
 });
 
+const scene2 = new Scene("初めての冒険", {
+  background: "/images/forest.jpg" // 森の背景
+});
+
+const scene3 = new Scene("一人の道", {
+  background: "/images/path.jpg" // 一人の道
+});
+
+// シーン1のアクション
 scene1.action([
   narrator`小さな街の酒場で、あなたは一人の冒険者と出会った。`,
   
@@ -40,11 +49,7 @@ scene1.action([
     ])
 ]);
 
-// シーン2: 一緒に冒険
-const scene2 = new Scene("初めての冒険", {
-  background: "/images/forest.jpg" // 森の背景
-});
-
+// シーン2のアクション
 scene2.action([
   narrator`リナと一緒に街を出発し、近くの森へ向かった。`,
   
@@ -65,11 +70,7 @@ scene2.action([
     ])
 ]);
 
-// シーン3: 一人で冒険
-const scene3 = new Scene("一人の道", {
-  background: "/images/path.jpg" // 一人の道
-});
-
+// シーン3のアクション
 scene3.action([
   narrator`あなたは一人で街を出発した。`,
   
