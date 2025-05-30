@@ -21,8 +21,6 @@ export const playerMovementSystem = (world: IWorld) => {
   const players = playerQuery(world)
   const inputs = inputQuery(world)
   
-  console.log(`Players: ${players.length}, Inputs: ${inputs.length}`)
-  
   if (players.length > 0 && inputs.length > 0) {
     const playerEid = players[0]
     const inputEid = inputs[0]
@@ -34,9 +32,6 @@ export const playerMovementSystem = (world: IWorld) => {
     const movementX = InputState.movementX[inputEid]
     const movementZ = -InputState.movementY[inputEid]
     
-    console.log(`Movement: X=${movementX}, Z=${movementZ}`)
-    console.log(`Player position before: ${Transform.position.x[playerEid]}, ${Transform.position.y[playerEid]}, ${Transform.position.z[playerEid]}`)
-    
     // Apply movement directly
     if (Math.abs(movementX) > 0.01) {
       Transform.position.x[playerEid] += movementX * moveSpeed
@@ -44,8 +39,6 @@ export const playerMovementSystem = (world: IWorld) => {
     if (Math.abs(movementZ) > 0.01) {
       Transform.position.z[playerEid] += movementZ * moveSpeed
     }
-    
-    console.log(`Player position after: ${Transform.position.x[playerEid]}, ${Transform.position.y[playerEid]}, ${Transform.position.z[playerEid]}`)
     
     // Simple gravity and ground collision
     const groundY = 2
@@ -60,9 +53,9 @@ export const playerMovementSystem = (world: IWorld) => {
       Transform.position.y[playerEid] = groundY + jumpHeight
     }
     
-    // Apply bounds
+    // Apply bounds - prevent going too far forward (positive Z)
     Transform.position.x[playerEid] = Math.max(-80, Math.min(80, Transform.position.x[playerEid]))
-    Transform.position.z[playerEid] = Math.max(-80, Math.min(80, Transform.position.z[playerEid]))
+    Transform.position.z[playerEid] = Math.max(-80, Math.min(5, Transform.position.z[playerEid]))  // Limit forward movement
     Transform.position.y[playerEid] = Math.max(0.5, Math.min(50, Transform.position.y[playerEid]))
   }
   
@@ -86,6 +79,11 @@ export const cameraSystem = (world: IWorld) => {
   const playerZ = Transform.position.z[playerEid]
   const inSafeZone = playerZ > -5
   const newMode = inSafeZone ? 0 : 1 // 0: fixed, 1: free (TPS)
+  
+  // Prevent going forward from safe zone
+  if (inSafeZone && Transform.position.z[playerEid] > 0) {
+    Transform.position.z[playerEid] = 0
+  }
   
   if (Camera.mode[cameraEid] !== newMode) {
     Camera.mode[cameraEid] = newMode
@@ -111,32 +109,48 @@ export const cameraSystem = (world: IWorld) => {
     threeCamera.lookAt(playerPos)
     
   } else {
-    // TPS mode (原神風) - mouse controls camera, camera controls movement direction
+    // TPS mode (原神風) - free camera with full rotation
     if (inputEid) {
-      const sensitivity = 0.003
-      Camera.rotationH[cameraEid] -= InputState.mouseDelta.x[inputEid] * sensitivity
-      Camera.rotationV[cameraEid] -= InputState.mouseDelta.y[inputEid] * sensitivity
+      const sensitivity = 0.005  // Increased sensitivity for better responsiveness
       
-      // Clamp vertical rotation (prevent camera flip)
-      Camera.rotationV[cameraEid] = Math.max(
-        -Math.PI / 6,  // Look down limit
-        Math.min(Math.PI / 3, Camera.rotationV[cameraEid])  // Look up limit
-      )
+      // Mouse delta accumulation for smoother rotation
+      const deltaX = InputState.mouseDelta.x[inputEid]
+      const deltaY = InputState.mouseDelta.y[inputEid]
+      
+      if (Math.abs(deltaX) > 0.1 || Math.abs(deltaY) > 0.1) {
+        Camera.rotationH[cameraEid] -= deltaX * sensitivity
+        Camera.rotationV[cameraEid] -= deltaY * sensitivity
+        
+        // Wrap horizontal rotation to prevent accumulation
+        Camera.rotationH[cameraEid] = Camera.rotationH[cameraEid] % (Math.PI * 2)
+        
+        // Clamp vertical rotation for natural feel
+        Camera.rotationV[cameraEid] = Math.max(
+          -Math.PI / 4,  // Look down limit (45 degrees)
+          Math.min(Math.PI / 4, Camera.rotationV[cameraEid])  // Look up limit (45 degrees)
+        )
+        
+      }
     }
     
     const distance = Camera.distance[cameraEid]
     const rotH = Camera.rotationH[cameraEid]
     const rotV = Camera.rotationV[cameraEid]
     
-    // Calculate camera position around player (原神風)
+    // Spherical coordinate system for smooth camera movement
+    const cosV = Math.cos(rotV)
+    const sinV = Math.sin(rotV)
+    const cosH = Math.cos(rotH)
+    const sinH = Math.sin(rotH)
+    
     const cameraOffset = new THREE.Vector3(
-      Math.sin(rotH) * Math.cos(rotV) * distance,
-      Math.sin(rotV) * distance + 2, // Base height + vertical rotation
-      Math.cos(rotH) * Math.cos(rotV) * distance
+      sinH * cosV * distance,  // X: side movement
+      sinV * distance + 4,     // Y: height + vertical look
+      cosH * cosV * distance   // Z: forward/back
     )
     
     threeCamera.position.copy(playerPos).add(cameraOffset)
-    threeCamera.lookAt(playerPos)
+    threeCamera.lookAt(playerPos.x, playerPos.y + 1, playerPos.z)  // Look slightly above player center
   }
   
   return world
