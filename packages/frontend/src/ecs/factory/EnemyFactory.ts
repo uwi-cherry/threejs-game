@@ -6,10 +6,10 @@ import * as THREE from 'three'
 
 // Game-specific components
 import { defineComponent } from 'bitecs'
-import { Health, initializePlayerComponents } from '../components/PlayerComponents'
+import { Health, initializeComponents as initHealth } from '../components/Health'
 
 // コンポーネントを初期化
-const { Health: HealthComponent } = initializePlayerComponents()
+const { Health: HealthComponent } = initHealth()
 
 export const Enemy = defineComponent()
 

@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { Transform } from '../components/Transform'
 import { InputState } from '../components/InputState'
 import { Camera } from '../components/Camera'
-import { Player } from '../components/PlayerComponents'
+import { Player } from '../components/Player'
 
 // クエリを定義
 const playerQuery = defineQuery([Player, Transform]) as (world: IWorld) => number[]

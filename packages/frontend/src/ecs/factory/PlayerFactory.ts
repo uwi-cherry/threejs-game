@@ -3,15 +3,13 @@ import { world } from '../world'
 import { Transform } from '../components/Transform'
 import { InputState } from '../components/InputState'
 import { RenderObject, setThreeObject } from '../components/RenderObject'
-import { 
-  Player, 
-  Health, 
-  DEFAULT_PLAYER_PARAMS,
-  initializePlayerComponents
-} from '../components/PlayerComponents'
+import { Player, initializeComponents as initPlayer } from '../components/Player'
+import { Health, initializeComponents as initHealth } from '../components/Health'
+import { DEFAULT_PLAYER_PARAMS } from '../components/Player' // Player.tsからインポート
 
 // コンポーネントを初期化
-const { Player: PlayerComponent, Health: HealthComponent } = initializePlayerComponents()
+const { Player: PlayerComponent } = initPlayer()
+const { Health: HealthComponent } = initHealth()
 import * as THREE from 'three'
 
 /**
@@ -80,5 +78,5 @@ export const createPlayerMesh = (eid: number, scene: THREE.Scene, color: number 
 }
 
 // 後方互換性のためエクスポート
-export { DEFAULT_PLAYER_PARAMS } from '../components/PlayerComponents'
+export { DEFAULT_PLAYER_PARAMS } from '../components/Player'
 export { createPlayerMovementSystem } from '../systems/PlayerMovementSystem'
