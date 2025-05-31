@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { GameWorld, GameWorldConfig } from '../../ecs/world'
+import { GameWorld, GameWorldConfig } from '../../ecs/world/GameWorld'
 
 export default function ECSGameWorld() {
   const mountRef = useRef<HTMLDivElement>(null)
