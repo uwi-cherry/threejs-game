@@ -1,5 +1,5 @@
 import { WorldManager } from '../world/WorldManager'
-import { SceneService } from '../services/SceneService'
+import { SceneService } from '../../infrastructure/SceneService'
 import { createSystemAdapter, createPhysicsSystemAdapter, createInputSystemAdapter } from '../adapters/SystemAdapter'
 import { createMovementSystem } from './MovementFactory'
 import { createRenderSystem } from './RenderFactory'
