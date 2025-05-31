@@ -1,6 +1,6 @@
 import { IWorld, defineQuery } from 'bitecs'
-import { Transform } from '../transform/Transform'
-import { Velocity } from './Velocity'
+import { Transform } from '../components/Transform'
+import { Velocity } from '../components/Velocity'
 
 const movableQuery = defineQuery([Transform, Velocity])
 
