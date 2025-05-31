@@ -68,7 +68,7 @@ export const createPlayerMovementSystem = (params = { moveSpeed: 0.25, jumpHeigh
     }
     
     // 移動制限
-    Transform.position.x[playerEid] = Math.max(-80, Math.min(80, Transform.position.y[playerEid]))
+    Transform.position.x[playerEid] = Math.max(-80, Math.min(80, Transform.position.x[playerEid]))
     Transform.position.z[playerEid] = Math.max(-80, Math.min(5, Transform.position.z[playerEid]))
     Transform.position.y[playerEid] = Math.max(0.5, Math.min(50, Transform.position.y[playerEid]))
     

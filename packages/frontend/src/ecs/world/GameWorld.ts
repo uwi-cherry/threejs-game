@@ -3,6 +3,7 @@ import { EnvironmentCreator } from '../../components/game/EnvironmentCreator'
 import { ResizeHandler } from '../../infrastructure/ResizeHandler'
 import { SceneService } from '../../infrastructure/SceneService'
 import { createPhysicsSystemAdapter, createSystemAdapter } from '../adapters/SystemAdapter'
+import { createPlayerMovementSystem } from '../systems/PlayerMovementSystem'
 import { createCameraEntity, createCameraSystem } from '../factory/CameraFactory'
 import { InputFactory, InputSystemConfig } from '../factory/InputFactory'
 import { createMovementSystem } from '../factory/MovementFactory'
@@ -234,12 +235,13 @@ export class GameWorld {
     // 基本システムの追加
     systems.add('Transform', createSystemAdapter(createTransformSystem(world), 'TransformSystem'), 0)
     systems.add('Movement', createSystemAdapter(createMovementSystem(world), 'MovementSystem'), 1)
+    systems.add('PlayerMovement', createSystemAdapter(createPlayerMovementSystem({ moveSpeed: 0.1, jumpHeight: 0.5 }), 'PlayerMovementSystem'), 2)
     systems.add('Render', createSystemAdapter(createRenderSystem(world, sceneService.getScene()), 'RenderSystem'), 10)
 
     // 物理システムの追加（オプション）
     if (this.config.enablePhysics) {
       const physicsSystem = createPhysicsSystem(world, { debug: this.config.debug })
-      systems.add('Physics', createPhysicsSystemAdapter(physicsSystem, 'PhysicsSystem'), 2)
+      systems.add('Physics', createPhysicsSystemAdapter(physicsSystem, 'PhysicsSystem'), 3)
     }
 
     if (this.config.debug) {
