@@ -4,7 +4,6 @@ import { world } from '../../ecs/world'
 import { renderSystem } from '../../ecs/systems/RenderSystem'
 import { InputSystemManager } from '../../ecs/systems/InputSystem'
 import { ResizeHandler } from '../../infrastructure/ResizeHandler'
-import { PhysicsWorld } from '../../EcsSystem/physics/PhysicsWorld'
 import { 
   createPlayerEntity, 
   createPlayerMesh,
@@ -16,6 +15,7 @@ import { createCameraEntity, createCameraSystem } from '../../ecs/factory/Camera
 import { setCameraReference } from '../../ecs/systems/CameraFollowSystem'
 import { createSystemPipeline } from './SystemPipeline'
 import { EnvironmentCreator } from './EnvironmentCreator'
+import { PhysicsWorld } from '@/ecs/systems/PhysicsWorld'
 
 export default function ECSGameWorld() {
   const mountRef = useRef<HTMLDivElement>(null)
