@@ -15,45 +15,67 @@ export const createPlayerMovementSystem = (params = { moveSpeed: 0.25, jumpHeigh
     const players = playerQuery(world)
     const inputs = inputQuery(world)
     const cameras = cameraQuery(world)
-    
-    if (players.length === 0 || inputs.length === 0 || cameras.length === 0) return world
-    
+
+    // デバッグログ
+    console.log('[PlayerMovementSystem] called')
+    console.log('[PlayerMovementSystem] players:', players)
+    console.log('[PlayerMovementSystem] inputs:', inputs)
+    console.log('[PlayerMovementSystem] cameras:', cameras)
+
+    if (players.length === 0 || inputs.length === 0 || cameras.length === 0) {
+      console.log('[PlayerMovementSystem] missing required entities')
+      return world
+    }
+
     const playerEid = players[0]
     const inputEid = inputs[0]
     const cameraEid = cameras[0]
-    
+
     const { moveSpeed, jumpHeight } = params
-    
+
     // 移動入力の取得（WASD）
     const movementX = InputState.movementX[inputEid]
     const movementZ = -InputState.movementY[inputEid]  // Y軸を反転して前後に移動
-    
+
+    console.log('[PlayerMovementSystem] movementX:', movementX, 'movementZ:', movementZ)
+    console.log('[PlayerMovementSystem] before pos:', {
+      x: Transform.position.x[playerEid],
+      y: Transform.position.y[playerEid],
+      z: Transform.position.z[playerEid]
+    })
+
     // カメラの向きに基づいて移動方向を計算
     if (Math.abs(movementX) > 0.01 || Math.abs(movementZ) > 0.01) {
       const cameraRotationH = Camera.rotationH[cameraEid]
-      
+
       const forward = new THREE.Vector3(
         Math.sin(cameraRotationH),
         0,
         Math.cos(cameraRotationH)
       )
-      
+
       const right = new THREE.Vector3(
         Math.cos(cameraRotationH),
         0,
         -Math.sin(cameraRotationH)
       )
-      
+
       const moveDirection = new THREE.Vector3()
       moveDirection.add(right.multiplyScalar(movementX))
       moveDirection.add(forward.multiplyScalar(movementZ))
       moveDirection.normalize()
-      
+
       // プレイヤー位置を更新
       Transform.position.x[playerEid] += moveDirection.x * moveSpeed
       Transform.position.z[playerEid] += moveDirection.z * moveSpeed
+
+      console.log('[PlayerMovementSystem] after pos:', {
+        x: Transform.position.x[playerEid],
+        y: Transform.position.y[playerEid],
+        z: Transform.position.z[playerEid]
+      })
     }
-    
+
     // シンプルな重力と地面衝突判定
     const groundY = 2
     if (Transform.position.y[playerEid] > groundY) {
@@ -61,17 +83,17 @@ export const createPlayerMovementSystem = (params = { moveSpeed: 0.25, jumpHeigh
     } else {
       Transform.position.y[playerEid] = groundY
     }
-    
+
     // ジャンプ処理
     if (InputState.jump[inputEid] && Math.abs(Transform.position.y[playerEid] - groundY) < 0.1) {
       Transform.position.y[playerEid] = groundY + jumpHeight
     }
-    
+
     // 移動制限
     Transform.position.x[playerEid] = Math.max(-80, Math.min(80, Transform.position.x[playerEid]))
     Transform.position.z[playerEid] = Math.max(-80, Math.min(5, Transform.position.z[playerEid]))
     Transform.position.y[playerEid] = Math.max(0.5, Math.min(50, Transform.position.y[playerEid]))
-    
+
     return world
   }
 }

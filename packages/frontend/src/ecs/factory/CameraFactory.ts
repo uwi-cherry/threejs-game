@@ -34,7 +34,7 @@ export interface CameraSystemParams {
   verticalLimitDown?: number
 }
 
-export const createCameraEntity = (params: CameraSystemParams) => {
+export const createCameraEntity = (world: IWorld, params: CameraSystemParams) => {
   const eid = addEntity(world)
 
   // Add components

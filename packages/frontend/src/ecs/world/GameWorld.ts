@@ -266,7 +266,7 @@ export class GameWorld {
     createPlayerMesh(playerEntityId, sceneService.getScene())
 
     // カメラエンティティの作成
-    const cameraEntity = createCameraEntity({
+    const cameraEntity = createCameraEntity(world, {
       camera: sceneService.getCamera(),
       initialPosition: { x: 0, y: 8, z: 12 },
       distance: 15,
