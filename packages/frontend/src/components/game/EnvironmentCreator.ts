@@ -42,13 +42,13 @@ export class EnvironmentCreator {
     }
   }
 
-  static createEnemies(scene: THREE.Scene) {
+  static createEnemies(scene: THREE.Scene, world: any) {
     for (let i = 0; i < 5; i++) {
       const x = Math.random() * 80 - 10
       const y = 0.5
       const z = Math.random() * 6 - 3
       
-      const enemyEid = createEnemyEntity(x, y, z)
+      const enemyEid = createEnemyEntity(world, { x, y, z })
       createEnemyMesh(enemyEid, scene)
     }
   }

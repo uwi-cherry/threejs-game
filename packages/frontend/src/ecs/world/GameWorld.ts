@@ -293,11 +293,13 @@ export class GameWorld {
    * 環境をセットアップします
    */
   private setupEnvironment(scene: THREE.Scene): void {
+    if (!this.state) return
+    
     const { areaParam, enablePhysics } = this.config
 
     // 環境の作成
     EnvironmentCreator.createEnvironment(scene, areaParam || 'forest')
-    EnvironmentCreator.createEnemies(scene)
+    EnvironmentCreator.createEnemies(scene, this.state.worldManager.world)
     EnvironmentCreator.createBackground(scene)
 
     // 物理ボディの追加（物理システムが有効な場合）
