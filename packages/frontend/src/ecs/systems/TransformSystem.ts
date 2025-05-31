@@ -1,5 +1,5 @@
 import { IWorld, defineQuery } from 'bitecs'
-import { Transform } from './Transform'
+import { Transform } from '../components/Transform'
 
 const transformQuery = defineQuery([Transform])
 
