@@ -3,13 +3,9 @@ import { world } from '../world'
 import { Transform } from '../components/Transform'
 import { InputState } from '../components/InputState'
 import { RenderObject, setThreeObject } from '../components/RenderObject'
-import { Player, initializeComponents as initPlayer } from '../components/Player'
-import { Health, initializeComponents as initHealth } from '../components/Health'
-import { DEFAULT_PLAYER_PARAMS } from '../components/Player' // Player.tsからインポート
-
-// コンポーネントを初期化
-const { Player: PlayerComponent } = initPlayer()
-const { Health: HealthComponent } = initHealth()
+import { Player } from '../components/Player'
+import { Health } from '../components/Health'
+import { DEFAULT_PLAYER_PARAMS } from '../components/Player'
 import * as THREE from 'three'
 
 /**
@@ -22,9 +18,9 @@ export const createPlayerEntity = (position?: { x: number, y: number, z: number 
   const eid = addEntity(world)
   
   // 必須コンポーネントを追加
-  addComponent(world, PlayerComponent, eid)
+  addComponent(world, Player as any, eid)
   addComponent(world, Transform, eid)
-  addComponent(world, HealthComponent, eid)
+  addComponent(world, Health as any, eid)
   addComponent(world, InputState, eid)
   addComponent(world, RenderObject, eid)
   

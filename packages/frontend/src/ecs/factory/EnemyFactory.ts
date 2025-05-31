@@ -6,19 +6,16 @@ import * as THREE from 'three'
 
 // Game-specific components
 import { defineComponent } from 'bitecs'
-import { Health, initializeComponents as initHealth } from '../components/Health'
-
-// コンポーネントを初期化
-const { Health: HealthComponent } = initHealth()
+import { Health } from '../components/Health'
 
 export const Enemy = defineComponent()
 
 export const createEnemyEntity = (x: number, y: number, z: number) => {
   const eid = addEntity(world)
   
-  addComponent(world, Enemy, eid)
+  addComponent(world, Enemy as any, eid)
   addComponent(world, Transform, eid)
-  addComponent(world, HealthComponent, eid)
+  addComponent(world, Health as any, eid)
   addComponent(world, RenderObject, eid)
   
   // Initialize Transform
@@ -30,9 +27,8 @@ export const createEnemyEntity = (x: number, y: number, z: number) => {
   Transform.scale.z[eid] = 1
   
   // Initialize Health
-  const healthComp = Health as any
-  healthComp.current[eid] = 50
-  healthComp.max[eid] = 50
+  Health.current[eid] = 50
+  Health.max[eid] = 50
   
   return eid
 }
