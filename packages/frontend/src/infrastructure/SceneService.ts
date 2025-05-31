@@ -46,6 +46,9 @@ export class SceneService {
     
     // DOMに追加
     container.appendChild(this.renderer.domElement)
+    // 入力を受け付けるためtabIndexとfocusを設定
+    this.renderer.domElement.tabIndex = 0
+    this.renderer.domElement.focus()
 
     // ライティングの設定
     this.setupLighting()

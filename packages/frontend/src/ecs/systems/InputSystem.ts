@@ -64,6 +64,7 @@ export class InputSystemManager {
   private handleKeyDown(event: KeyboardEvent) {
     event.preventDefault()
     this.keys.add(event.code)
+    console.log('[InputSystemManager] handleKeyDown:', event.code)
     
     // Rキーでカメラリセット
     if (event.code === 'KeyR') {
@@ -80,9 +81,11 @@ export class InputSystemManager {
   private handleKeyUp(event: KeyboardEvent) {
     event.preventDefault()
     this.keys.delete(event.code)
+    console.log('[InputSystemManager] handleKeyUp:', event.code)
   }
   
   private handleMouseDown(event: MouseEvent) {
+    console.log('[InputSystemManager] handleMouseDown:', event.button)
     if (event.button === 0) {
       this.mouseDown = true
       this.element.style.cursor = 'grabbing'
@@ -90,6 +93,7 @@ export class InputSystemManager {
   }
   
   private handleMouseUp(event: MouseEvent) {
+    console.log('[InputSystemManager] handleMouseUp:', event.button)
     if (event.button === 0) {
       this.mouseDown = false
       this.element.style.cursor = 'grab'
@@ -97,6 +101,7 @@ export class InputSystemManager {
   }
   
   private handleMouseMove(event: MouseEvent) {
+    console.log('[InputSystemManager] handleMouseMove:', event.clientX, event.clientY)
     const rect = this.element.getBoundingClientRect()
     this.mousePosition.set(
       ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -131,7 +136,6 @@ export class InputSystemManager {
     
     if (inputs.length > 0) {
       const inputEid = inputs[0]
-      
       // Movement input (WASD)
       let movementX = 0
       let movementY = 0

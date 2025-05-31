@@ -70,11 +70,9 @@ export class InputFactory {
    */
   static initializeInputSystem(world: IWorld, element: HTMLElement, config: InputSystemConfig = {}) {
     const manager = InputFactory.createInputSystemManager(element, config)
-    const entityId = InputFactory.createInputEntity(world)
-    
+    // 既存のInputState付きエンティティ（プレイヤー）を利用する
     return {
       manager,
-      entityId,
       updateInput: (world: IWorld) => manager.updateInput(world),
       dispose: () => manager.destroy()
     }

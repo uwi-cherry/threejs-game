@@ -53,7 +53,7 @@ export default function ECSGameWorld() {
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mountRef} className="absolute inset-0" />
+      <div ref={mountRef} className="absolute inset-0" tabIndex={0} />
     </div>
   )
 }

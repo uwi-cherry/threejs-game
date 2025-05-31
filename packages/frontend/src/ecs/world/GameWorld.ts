@@ -1,9 +1,11 @@
 import * as THREE from 'three'
+import { addEntity, addComponent } from 'bitecs'
 import { EnvironmentCreator } from '../../components/game/EnvironmentCreator'
 import { ResizeHandler } from '../../infrastructure/ResizeHandler'
 import { SceneService } from '../../infrastructure/SceneService'
 import { createPhysicsSystemAdapter, createSystemAdapter } from '../adapters/SystemAdapter'
 import { createPlayerMovementSystem } from '../systems/PlayerMovementSystem'
+import { InputState } from '../components/InputState'
 import { createCameraEntity, createCameraSystem } from '../factory/CameraFactory'
 import { InputFactory, InputSystemConfig } from '../factory/InputFactory'
 import { createMovementSystem } from '../factory/MovementFactory'
@@ -259,7 +261,7 @@ export class GameWorld {
     const { world } = worldManager
     const playerPosition = this.config.playerPosition!
 
-    // プレイヤーエンティティの作成
+    // プレイヤーエンティティの作成（InputState付き）
     const playerEntityId = createPlayerEntity(world, playerPosition)
     createPlayerMesh(playerEntityId, sceneService.getScene())
 
